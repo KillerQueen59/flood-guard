@@ -6,12 +6,183 @@
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Default overrides */
+  --default-transition-duration: 300ms;
+
+  /* Colors */
+  --color-debug: coral;
+  --color-background: #ffffff;
+  --color-foreground: #171717;
+
+  /* Primary Colors */
+  --color-primary-10: #f2fbff;
+  --color-primary-20: #e4f7ff;
+  --color-primary-30: #c2ebfe;
+  --color-primary-40: #1c9ed8;
+  --color-primary-60: #1781bf;
+  --color-primary-80: #1d589e;
+  --color-primary-90: #1b4786;
+
+  /* Secondary Colors */
+  --color-secondary-10: #b4bac8;
+  --color-secondary-60: #131629;
+
+  /* Red Colors */
+  --color-red-10: #fef2f2;
+  --color-red-60: #dc2626;
+
+  /* Yellow Colors */
+  --color-yellow-10: #fefce8;
+  --color-yellow-60: #ca8a04;
+
+  /* Success Colors */
+  --color-success-10: #ecfdf5;
+  --color-success-20: #d1fae5;
+  --color-success-30: #a7f3d0;
+  --color-success-40: #6ee7b7;
+  --color-success-50: #34d399;
+  --color-success-60: #10b981;
+  --color-success-70: #059669;
+  --color-success-80: #047857;
+  --color-success-90: #065f46;
+  --color-success-100: #064e3b;
+
+  /* Gray Colors */
+  --color-gray-10: #f9fafb;
+  --color-gray-20: #f3f4f6;
+  --color-gray-30: #e5e7eb;
+  --color-gray-40: #d1d5db;
+  --color-gray-50: #9ca3af;
+  --color-gray-60: #6b7280;
+  --color-gray-70: #4b5563;
+  --color-gray-80: #374151;
+  --color-gray-90: #1f2937;
+  --color-gray-100: #111827;
+
+  /* Danger Colors */
+  --color-danger-10: #fef2f2;
+  --color-danger-20: #fee2e2;
+  --color-danger-30: #fecaca;
+  --color-danger-40: #fca5a5;
+  --color-danger-50: #f87171;
+  --color-danger-60: #ef4444;
+  --color-danger-70: #dc2626;
+  --color-danger-80: #b91c1c;
+  --color-danger-90: #991b1b;
+  --color-danger-100: #7f1d1d;
+
+  /* Indicator Colors */
+  --color-indicator-red: #e51717;
+  --color-indicator-magenta: #e91d62;
+  --color-indicator-purple: #9c29b2;
+  --color-indicator-deep-purple: #663cb5;
+  --color-indicator-indigo: #4153b5;
+  --color-indicator-blue: #2176f5;
+  --color-indicator-light-blue: #02a9f7;
+  --color-indicator-cyan: #01bcd6;
+  --color-indicator-teal: #039789;
+  --color-indicator-green: #4cb051;
+  --color-indicator-light-green: #8dc34b;
+  --color-indicator-lime: #cbdd38;
+  --color-indicator-yellow: #ffe93d;
+  --color-indicator-amber: #fcc005;
+  --color-indicator-orange: #ff9800;
+  --color-indicator-deep-orange: #fe5823;
+  --color-indicator-brown: #7b5649;
+  --color-indicator-grey: #9e9e9e;
+  --color-indicator-blue-grey: #5f7d8c;
+  --color-indicator-black: #373232;
+
+  /* Typography */
+  --font-family-inter: Inter, system-ui, sans-serif;
+
+  /* Font Sizes and Line Heights */
+  --font-size-xs: 12px;
+  --line-height-xs: 16px;
+  --font-size-sm: 14px;
+  --line-height-sm: 20px;
+  --font-size-base: 16px;
+  --line-height-base: 24px;
+  --font-size-lg: 20px;
+  --line-height-lg: 28px;
+  --font-size-xl: 24px;
+  --line-height-xl: 32px;
 }
 
+/* Animation Keyframes */
+@keyframes fadeInRight {
+  0% {
+    opacity: 0;
+    transform: translate(2rem);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0);
+  }
+}
+
+@keyframes fadeShow {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOutLeft {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Animation Utility Classes */
+.animate-enter {
+  animation: fadeInRight 300ms ease-out;
+}
+
+.animate-leave {
+  animation: fadeOutLeft 300ms ease-in forwards;
+}
+
+.animate-show {
+  animation: fadeShow 200ms ease-out;
+}
+
+/* Typography Utility Classes */
+.font-inter {
+  font-family: var(--font-family-inter);
+}
+
+.text-xs {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-xs);
+}
+
+.text-sm {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-sm);
+}
+
+.text-base {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+.text-lg {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-lg);
+}
+
+.text-xl {
+  font-size: var(--font-size-xl);
+  line-height: var(--line-height-xl);
+}
+
+/* Dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -19,8 +190,9 @@
   }
 }
 
+/* Base Styles */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-family-inter);
 }

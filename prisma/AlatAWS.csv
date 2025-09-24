@@ -1,0 +1,13 @@
+id,name,detailName,startDate,battery,signal,sensor,status
+660e8400-e29b-41d4-a716-446655440000,AWS-001,Automatic Weather Station Block A,2024-01-15,85,78,95,active
+660e8400-e29b-41d4-a716-446655440001,AWS-002,Automatic Weather Station Block B,2024-01-20,72,82,88,active
+660e8400-e29b-41d4-a716-446655440002,AWS-003,Automatic Weather Station Block C,2024-02-01,91,75,92,active
+660e8400-e29b-41d4-a716-446655440003,AWS-004,Automatic Weather Station Block D,2024-02-10,45,68,78,alert
+660e8400-e29b-41d4-a716-446655440004,AWS-005,Automatic Weather Station Block E,2024-02-15,88,85,94,active
+660e8400-e29b-41d4-a716-446655440005,AWS-006,Automatic Weather Station Block F,2024-03-01,25,45,65,rusak
+660e8400-e29b-41d4-a716-446655440006,AWS-007,Automatic Weather Station Block G,2024-03-05,79,79,89,active
+660e8400-e29b-41d4-a716-446655440007,AWS-008,Automatic Weather Station Block H,2024-03-10,0,0,0,idle
+660e8400-e29b-41d4-a716-446655440008,AWS-009,Automatic Weather Station Block I,2024-03-15,92,88,96,active
+660e8400-e29b-41d4-a716-446655440009,AWS-010,Automatic Weather Station Block J,2024-03-20,67,72,82,active
+660e8400-e29b-41d4-a716-44665544000a,AWS-011,Automatic Weather Station Block K,2024-04-01,38,52,68,alert
+660e8400-e29b-41d4-a716-44665544000b,AWS-012,Automatic Weather Station Block L,2024-04-05,83,81,91,active

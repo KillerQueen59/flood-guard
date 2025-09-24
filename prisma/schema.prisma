@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id       String  @id @default(uuid())
+  email    String  @unique
+  name     String?
+  password String?
+  role     String?
+}
+
+model AlatAWS {
+  id         String @id @default(uuid())
+  name       String
+  detailName String
+  startDate  String
+  battery    Int
+  signal     Int
+  sensor     Int
+  status     String
+}
+
+model AlatAWL {
+  id         String @id @default(uuid())
+  name       String
+  detailName String
+  startDate  String
+  battery    Int
+  signal     Int
+  data       Int
+  status     String
+  note       String
+}
+
+model PT {
+  id   String @id @default(uuid())
+  name String
+}
+
+model Kebun {
+  id   String @id @default(uuid())
+  name String
+}
+
+model Device {
+  id   String @id @default(uuid())
+  name String
+}
+
+model AlatDashboard {
+  id     String @id @default(uuid())
+  pt     String
+  kebun  String
+  rusak  Int
+  idle   Int
+  active Int
+  alert  Int
+}
+
+model WeatherData {
+  id                Int    @id @default(autoincrement())
+  tanggal           String
+  year              Int
+  suhuRataRata      Float
+  ch                Float
+  kelembabanRelatif Float
+  tekananUdara      Float
+  windSpeed         Float
+  windDirec         Float
+  suhuMinimal       Float
+  suhuMaksimal      Float
+  evapotranspirasi  Float
+  radiasiSolarPanel Float
+}
+
+model TMASData {
+  id         Int    @id @default(autoincrement())
+  tanggal    String
+  ketinggian Float
+}
+
+model TMATData {
+  id         Int    @id @default(autoincrement())
+  tanggal    String
+  ketinggian Float
+}

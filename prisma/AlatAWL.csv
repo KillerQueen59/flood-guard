@@ -1,0 +1,13 @@
+id,name,detailName,startDate,battery,signal,data,status,note
+770e8400-e29b-41d4-a716-446655440000,AWL-001,Automatic Water Level Sensor A,2024-01-15,82,76,145,active,Normal operation
+770e8400-e29b-41d4-a716-446655440001,AWL-002,Automatic Water Level Sensor B,2024-01-18,75,83,132,active,Calibrated recently
+770e8400-e29b-41d4-a716-446655440002,AWL-003,Automatic Water Level Sensor C,2024-02-02,88,79,158,active,Working fine
+770e8400-e29b-41d4-a716-446655440003,AWL-004,Automatic Water Level Sensor D,2024-02-12,42,65,89,alert,Low battery warning
+770e8400-e29b-41d4-a716-446655440004,AWL-005,Automatic Water Level Sensor E,2024-02-20,91,87,167,active,Recently installed
+770e8400-e29b-41d4-a716-446655440005,AWL-006,Automatic Water Level Sensor F,2024-03-03,15,32,45,rusak,Sensor malfunction detected
+770e8400-e29b-41d4-a716-446655440006,AWL-007,Automatic Water Level Sensor G,2024-03-08,0,0,0,idle,Maintenance mode
+770e8400-e29b-41d4-a716-446655440007,AWL-008,Automatic Water Level Sensor H,2024-03-12,84,81,149,active,Optimal performance
+770e8400-e29b-41d4-a716-446655440008,AWL-009,Automatic Water Level Sensor I,2024-03-18,76,78,138,active,Routine check passed
+770e8400-e29b-41d4-a716-446655440009,AWL-010,Automatic Water Level Sensor J,2024-03-25,93,89,172,active,Excellent condition
+770e8400-e29b-41d4-a716-44665544000a,AWL-011,Automatic Water Level Sensor K,2024-04-02,48,58,78,alert,Signal interference
+770e8400-e29b-41d4-a716-44665544000b,AWL-012,Automatic Water Level Sensor L,2024-04-08,87,85,155,active,Normal readings

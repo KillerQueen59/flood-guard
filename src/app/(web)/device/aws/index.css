@@ -1,0 +1,11 @@
+.dropdown {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+  }
+  
+  .dropdown.open {
+    max-height: 200px; /* adjust as needed */
+    opacity: 1;
+  }
