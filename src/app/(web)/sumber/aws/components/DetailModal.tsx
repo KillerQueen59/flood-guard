@@ -12,340 +12,402 @@ type DetailModalProps = {
 const DetailModal = ({ show = false, onClose }: DetailModalProps) => {
   const { captureComponent } = useCapture("dummy-id");
   const dummyBattery = 60;
+
   return (
     show && (
       <div
-        className="z-10 fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center "
-        onClick={() => {
-          // on/Close();
+        className="z-50 fixed inset-0 flex justify-center items-center bg-black/60 backdrop-blur-sm"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
         }}
       >
-        <div className="flex flex-col w-[80%] bg-white rounded-lg max-h-[90%] min-h-[200px]">
-          <div>
-            <div className="flex items-center space-x-4 pb-4 p-6">
-              <div className="flex-grow ">
-                <div className="text-gray-80 text-base font-semibold">
+        <div className="flex flex-col w-[95%] max-w-7xl bg-white rounded-2xl max-h-[95%] min-h-[600px] shadow-2xl border border-gray-200">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl border-b border-gray-200">
+            <div className="flex items-center justify-between p-6">
+              <div className="flex-grow">
+                <h2 className="text-gray-800 text-xl font-bold">
                   Dashboard Detail
-                </div>
+                </h2>
+                <p className="text-gray-500 text-sm mt-1">
+                  Real-time environmental monitoring data
+                </p>
               </div>
-              <div className="flex space-x-4">
+              <div className="flex items-center space-x-3">
                 <Button
-                  label="Export Pdf "
-                  onClick={() => {
-                    captureComponent("dummy-id");
-                  }}
+                  label="Export PDF"
+                  onClick={() => captureComponent("dummy-id")}
                   buttonSize={ButtonSize.LARGE}
                   buttonColor={ButtonColor.PRIMARY}
                 />
                 <button
-                  className="text-primary-60"
-                  onClick={() => {
-                    onClose();
-                  }}
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  onClick={onClose}
                 >
                   <CloseIcon />
                 </button>
               </div>
             </div>
-            <div className="border-b border-gray-30 mt-4"></div>
           </div>
-          {/* Body */}
-          <div className="relative p-8 overflow-y-auto space-y-6" id="dummy-id">
-            <div>
-              <div className="flex space-x-4">
-                <div className="min-w-[100px]">Device AWS</div>
-                <div>:</div>
-                <div>AWS-001-THP8-3209</div>
+
+          {/* Device Info */}
+          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+            <div className="grid grid-cols-2 gap-8">
+              <div className="flex items-center space-x-3">
+                <span className="text-gray-600 font-medium">Device AWS:</span>
+                <span className="text-gray-800 font-mono bg-white px-3 py-1 rounded-md border">
+                  AWS-001-THP8-3209
+                </span>
               </div>
-              <div className="flex space-x-4">
-                <div className="min-w-[100px]">Last Updated</div>
-                <div>:</div>
-                <div>2024-09-19 06:00:00</div>
+              <div className="flex items-center space-x-3">
+                <span className="text-gray-600 font-medium">Last Updated:</span>
+                <span className="text-gray-800 font-mono bg-white px-3 py-1 rounded-md border">
+                  2024-09-19 06:00:00
+                </span>
               </div>
             </div>
-            <div className="flex w-full space-x-4 ">
-              <div className="max-w-[30%] w-[30%] space-y-2">
-                {/* Device Condition */}
-                <div className="bg-white min-h-[100px] rounded border border-primary-60">
-                  <div className=" w-full bg-primary-60 flex align-center p-2 py-auto text-white">
-                    Device Condition
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 p-6 overflow-y-auto" id="dummy-id">
+            <div className="space-y-6">
+              {/* First Row - Device Condition, Wind Condition, Derivative Data */}
+              <div className="grid grid-cols-3 gap-6">
+                {/* Device Condition Card */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-xl">
+                    <h3 className="font-semibold text-lg">Device Condition</h3>
                   </div>
-                  <div className="p-4">
-                    <div className="flex space-x-2">
-                      <div>Battery</div>
-                      <div className="w-full">
-                        <div className="flex border border-black w-full min-h-[50px] relative">
-                          <div
-                            className="min-h-[50px]"
-                            style={{
-                              width: `${dummyBattery}%`,
-                              background:
-                                dummyBattery > 50 ? "#10B981" : "#EF4444",
-                            }}
-                          />
-                          <div className="text-white absolute flex p-4 h-[50px]">
-                            {dummyBattery} %
-                          </div>
-                        </div>
+                  <div className="p-6 space-y-6">
+                    {/* Battery */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-gray-700 font-medium">
+                          Battery
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {dummyBattery}%
+                        </span>
                       </div>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <div className="flex space-x-2">
-                      <div>Signal</div>
-                      <div className="w-full flex ">
-                        <div className="flex min-h-[50px] relative">
-                          <img
-                            src="/signal.png"
-                            alt="signal"
-                            width={80}
-                            height={80}
-                          />
-                          <div className="absolute bottom-0 right-0">31</div>
-                        </div>
-                        <div className="flex-grow"></div>
-                        <div>Sangat Kuat</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {/* Wind Condition */}
-                <div className="bg-white min-h-[100px] rounded border border-primary-60">
-                  <div className=" w-full bg-primary-60 flex align-center p-2 py-auto text-white">
-                    Wind Condition
-                  </div>
-                  <div className="flex">
-                    <div className="p-4 w-[50%]">
-                      <div className="space-x-2">
-                        <div>Arah angin</div>
-                        <div className="w-full">
-                          <div className="flex min-h-[50px] relative">
-                            <img
-                              src="/compass.png"
-                              alt="signal"
-                              width={80}
-                              height={80}
-                            />
-                          </div>
-                          <div className="flex-grow"></div>
-                        </div>
-                        <div className="  h-fit w-full  cursor-pointer bg-primary-10 py-1 hover:bg-primary-40">
-                          <div>56o</div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4 w-[50%]">
-                      <div className="space-x-2">
-                        <div>Kecepatan Angin</div>
-                        <div className="w-full">
-                          <div className="flex min-h-[50px] relative py-2">
-                            <img
-                              src="/windspeed.gif"
-                              alt="signal"
-                              width={80}
-                              height={80}
-                            />
-                          </div>
-                          <div className="flex-grow"></div>
-                          <div className="  h-fit w-full cursor-pointer bg-primary-10 py-1 hover:bg-primary-40">
-                            <div>56o 0 km/jam</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="max-w-[35%] w-[35%] space-y-2">
-                <div className="bg-white min-h-[100px] rounded border border-primary-60 overflow-auto">
-                  <div className=" w-full bg-primary-60 flex align-center p-2 py-auto text-white">
-                    Rainfall Condition
-                  </div>
-                  <div className="p-4">
-                    <div className="flex space-x-2">
-                      <div className="w-full flex flex-col  min-h-[150px]">
-                        <div className="flex max-h-[100px] relative">
-                          <img
-                            src="/raincloud.gif"
-                            alt="signal"
-                            width={110}
-                            height={110}
-                          />
-                        </div>
-                        <div className="w-full p-4">
-                          <div className="flex border border-black w-full min-h-[150px] relative">
-                            <div className="flex flex-col w-1/3 h-[150px] border-r border-black">
-                              <div className=" border-b h-fit bg-primary-60 text-white border-black w-full text-center ,b-4">
-                                Hari ini
-                              </div>
-                              <div className="  h-fit w-full text-center cursor-pointer bg-primary-10 py-1 hover:bg-primary-40">
-                                <div>Curah Hujan (CH)</div>
-                                <div>18 mm </div>
-                              </div>
-                              <div className="  h-fit w-full text-center cursor-pointer bg-primary-10 py-1 hover:bg-primary-40">
-                                <div>Intensitas (I)</div>
-                                <div>2 mm/jam</div>
-                              </div>
-                            </div>
-                            <div className="flex flex-col w-1/3 h-[150px] border-r border-black">
-                              <div className=" border-b h-fit bg-primary-60 text-white border-black w-full text-center ,b-4">
-                                Kemarin
-                              </div>
-                              <div className="  h-fit w-full text-center cursor-pointer bg-primary-10 py-1 hover:bg-primary-40">
-                                <div>Curah Hujan (CH)</div>
-                                <div>18 mm </div>
-                              </div>
-                              <div className="  h-fit w-full text-center cursor-pointer bg-primary-10 py-1 hover:bg-primary-40">
-                                <div>Intensitas (I)</div>
-                                <div>2 mm/jam</div>
-                              </div>
-                            </div>
-                            <div className="flex flex-col w-1/3 h-[150px] border- border-black">
-                              <div className=" border-b h-fit bg-primary-60 text-white border-black w-full text-center ,b-4">
-                                Bulan Ini
-                              </div>
-                              <div className="  h-fit w-full text-center cursor-pointer bg-primary-10 py-1 hover:bg-primary-40">
-                                <div>Curah Hujan (CH)</div>
-                                <div>18 mm </div>
-                              </div>
-                              <div className="  h-fit w-full text-center cursor-pointer bg-primary-10 py-1 hover:bg-primary-40">
-                                <div>Intensitas (I)</div>
-                                <div>2 mm/jam</div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-white min-h-[100px] rounded border border-primary-60">
-                  <div className=" w-full bg-primary-60 flex align-center p-2 py-auto text-white overflow-auto">
-                    Derivative Data
-                  </div>
-                  <div className="p-4 w-[50%]">
-                    <div className="space-x-2">
-                      <div>Evapotranspirasi</div>
-                      <div className="w-full">
-                        <div className="flex min-h-[50px] relative">
-                          <img
-                            src="/evapotranspiration.gif"
-                            alt="signal"
-                            width={80}
-                            height={80}
-                          />
-                        </div>
-                        <div className="flex-grow"></div>
-                        <div className="h-fit w-fit px-2 cursor-pointer bg-primary-10 py-1 hover:bg-primary-40">
-                          <div>Σ Bulanan : 0.30 mm</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="max-w-[35%] w-[35%] space-y-2 ">
-                <div className="bg-white min-h-[100px] rounded border border-primary-60 overflow-auto">
-                  <div className=" w-full bg-primary-60 flex align-center p-2 py-auto text-white">
-                    Ambient Air Condition
-                  </div>
-                  <div className="flex">
-                    <div className="p-4 w-1/3">
-                      <div className="space-x-2">
-                        <div className="text-center">Suhu</div>
-                        <div className="w-full">
-                          <div className="flex min-h-[50px] relative">
-                            <img
-                              src="/temperature.gif"
-                              alt="signal"
-                              width={80}
-                              height={80}
-                            />
-                          </div>
-                          <div className="flex-grow"></div>
-                          <div className="h-fit w-full px-2 cursor-pointer bg-primary-10 py-1 hover:bg-primary-40">
-                            <div>24.00o</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4 w-1/3">
-                      <div className="space-x-2">
-                        <div className="text-center">Barometer</div>
-                        <div className="w-full">
-                          <div className="flex min-h-[50px] relative">
-                            <img
-                              src="/barometer.gif"
-                              alt="signal"
-                              width={80}
-                              height={80}
-                            />
-                          </div>
-                          <div className="flex-grow"></div>
-                          <div className="h-fit w-full px-2 cursor-pointer bg-primary-10 py-1 hover:bg-primary-40">
-                            <div>1014.10 hPa</div>
-                          </div>
+                      <div className="relative bg-gray-200 rounded-full h-4 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${dummyBattery}%`,
+                            background:
+                              dummyBattery > 50
+                                ? "linear-gradient(to right, #10B981, #059669)"
+                                : "linear-gradient(to right, #EF4444, #DC2626)",
+                          }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-white">
+                          {dummyBattery}%
                         </div>
                       </div>
                     </div>
 
-                    <div className="p-4 w-1/3">
-                      <div className="space-x-2">
-                        <div className="text-center">Radiasi</div>
-                        <div className="w-full">
-                          <div className="flex min-h-[50px] relative">
-                            <img
-                              src="/radiation.gif"
-                              alt="signal"
-                              width={80}
-                              height={80}
-                            />
+                    {/* Signal */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-gray-700 font-medium">
+                          Signal Strength
+                        </span>
+                        <span className="text-sm font-semibold text-green-600">
+                          Very Strong
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src="/signal.png"
+                          alt="signal"
+                          width={60}
+                          height={60}
+                          className="opacity-80"
+                        />
+                        <div className="flex-1">
+                          <div className="text-2xl font-bold text-gray-800">
+                            31
                           </div>
-                          <div className="flex-grow"></div>
-                          <div className="h-fit w-full px-2 cursor-pointer bg-primary-10 py-1 hover:bg-primary-40">
-                            <div>0.00 W/m2</div>
+                          <div className="text-sm text-gray-500">dBm</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Wind Condition Card */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-xl">
+                    <h3 className="font-semibold text-lg">Wind Condition</h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-2 gap-6">
+                      {/* Wind Direction */}
+                      <div className="text-center">
+                        <h4 className="text-gray-700 font-medium mb-3">
+                          Wind Direction
+                        </h4>
+                        <div className="flex flex-col items-center space-y-3">
+                          <img
+                            src="/compass.png"
+                            alt="compass"
+                            width={70}
+                            height={70}
+                          />
+                          <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-semibold">
+                            56°
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Wind Speed */}
+                      <div className="text-center">
+                        <h4 className="text-gray-700 font-medium mb-3">
+                          Wind Speed
+                        </h4>
+                        <div className="flex flex-col items-center space-y-3">
+                          <img
+                            src="/windspeed.gif"
+                            alt="wind speed"
+                            width={70}
+                            height={70}
+                          />
+                          <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-semibold">
+                            0 km/h
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-center">
-                    <div className="p-4 w-1/3">
-                      <div className="space-x-2">
-                        <div className="text-center"> Kelembapan</div>
-                        <div className="w-full">
-                          <div className="flex min-h-[50px] relative">
-                            <img
-                              src="/humidity.gif"
-                              alt="signal"
-                              width={80}
-                              height={80}
-                            />
+                </div>
+
+                {/* Derivative Data Card */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-xl">
+                    <h3 className="font-semibold text-lg">Derivative Data</h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="text-center">
+                      <h4 className="text-gray-700 font-medium mb-4">
+                        Evapotranspiration
+                      </h4>
+                      <div className="flex flex-col items-center space-y-4">
+                        <img
+                          src="/evapotranspiration.gif"
+                          alt="evapotranspiration"
+                          width={80}
+                          height={80}
+                        />
+                        <div className="bg-blue-50 text-blue-700 px-6 py-3 rounded-lg">
+                          <div className="font-semibold">Monthly Total</div>
+                          <div className="text-lg font-bold">0.30 mm</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Second Row - Rainfall Condition (Full Width) */}
+              <div className="w-full">
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-xl">
+                    <h3 className="font-semibold text-lg">
+                      Rainfall Condition
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="flex items-center justify-center space-x-8">
+                      {/* Rain Cloud Image */}
+                      <div className="flex-shrink-0">
+                        <img
+                          src="/raincloud.gif"
+                          alt="rain cloud"
+                          width={120}
+                          height={120}
+                        />
+                      </div>
+
+                      {/* Rainfall Data Table */}
+                      <div className="flex-1 max-w-2xl">
+                        <div className="grid grid-cols-3 gap-0 border border-gray-300 rounded-lg overflow-hidden">
+                          {/* Today */}
+                          <div className="text-center">
+                            <div className="bg-blue-600 text-white p-4 font-medium">
+                              Today
+                            </div>
+                            <div className="p-6 bg-blue-50 space-y-3">
+                              <div>
+                                <div className="text-sm text-gray-600 mb-1">
+                                  Rainfall (CH)
+                                </div>
+                                <div className="text-xl font-bold text-gray-800">
+                                  18 mm
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm text-gray-600 mb-1">
+                                  Intensity (I)
+                                </div>
+                                <div className="text-xl font-bold text-gray-800">
+                                  2 mm/h
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex-grow"></div>
-                          <div className="h-fit w-full text-center px-2 cursor-pointer bg-primary-10 py-1 hover:bg-primary-40">
-                            <div>93 %</div>
+
+                          {/* Yesterday */}
+                          <div className="text-center border-l border-gray-300">
+                            <div className="bg-blue-600 text-white p-4 font-medium">
+                              Yesterday
+                            </div>
+                            <div className="p-6 bg-blue-50 space-y-3">
+                              <div>
+                                <div className="text-sm text-gray-600 mb-1">
+                                  Rainfall (CH)
+                                </div>
+                                <div className="text-xl font-bold text-gray-800">
+                                  18 mm
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm text-gray-600 mb-1">
+                                  Intensity (I)
+                                </div>
+                                <div className="text-xl font-bold text-gray-800">
+                                  2 mm/h
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* This Month */}
+                          <div className="text-center border-l border-gray-300">
+                            <div className="bg-blue-600 text-white p-4 font-medium">
+                              This Month
+                            </div>
+                            <div className="p-6 bg-blue-50 space-y-3">
+                              <div>
+                                <div className="text-sm text-gray-600 mb-1">
+                                  Rainfall (CH)
+                                </div>
+                                <div className="text-xl font-bold text-gray-800">
+                                  18 mm
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm text-gray-600 mb-1">
+                                  Intensity (I)
+                                </div>
+                                <div className="text-xl font-bold text-gray-800">
+                                  2 mm/h
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <div className="p-4 w-1/3">
-                      <div className="space-x-2">
-                        <div className="text-center">UV Index</div>
-                        <div className="w-full">
-                          <div className="flex min-h-[50px] relative">
-                            <img
-                              src="/uvindex.gif"
-                              alt="signal"
-                              width={80}
-                              height={80}
-                            />
-                          </div>
-                          <div className="flex-grow"></div>
-                          <div className="h-fit w-full text-center px-2 cursor-pointer bg-primary-10 py-1 hover:bg-primary-40">
-                            <div>0.0</div>
-                            <div>Aman</div>
-                          </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Third Row - Ambient Air Condition (Full Width) */}
+              <div className="w-full">
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-xl">
+                    <h3 className="font-semibold text-lg">
+                      Ambient Air Condition
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    {/* All metrics in one row */}
+                    <div className="grid grid-cols-5 gap-6">
+                      {/* Temperature */}
+                      <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <h4 className="text-gray-600 text-sm font-medium mb-3">
+                          Temperature
+                        </h4>
+                        <img
+                          src="/temperature.gif"
+                          alt="temperature"
+                          width={60}
+                          height={60}
+                          className="mx-auto mb-3"
+                        />
+                        <div className="text-xl font-bold text-gray-800">
+                          24.00°C
+                        </div>
+                      </div>
+
+                      {/* Barometer */}
+                      <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <h4 className="text-gray-600 text-sm font-medium mb-3">
+                          Pressure
+                        </h4>
+                        <img
+                          src="/barometer.gif"
+                          alt="barometer"
+                          width={60}
+                          height={60}
+                          className="mx-auto mb-3"
+                        />
+                        <div className="text-xl font-bold text-gray-800">
+                          1014.10 hPa
+                        </div>
+                      </div>
+
+                      {/* Radiation */}
+                      <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <h4 className="text-gray-600 text-sm font-medium mb-3">
+                          Solar Radiation
+                        </h4>
+                        <img
+                          src="/radiation.gif"
+                          alt="radiation"
+                          width={60}
+                          height={60}
+                          className="mx-auto mb-3"
+                        />
+                        <div className="text-xl font-bold text-gray-800">
+                          0.00 W/m²
+                        </div>
+                      </div>
+
+                      {/* Humidity */}
+                      <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <h4 className="text-gray-600 text-sm font-medium mb-3">
+                          Humidity
+                        </h4>
+                        <img
+                          src="/humidity.gif"
+                          alt="humidity"
+                          width={60}
+                          height={60}
+                          className="mx-auto mb-3"
+                        />
+                        <div className="text-xl font-bold text-gray-800">
+                          93%
+                        </div>
+                      </div>
+
+                      {/* UV Index */}
+                      <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <h4 className="text-gray-600 text-sm font-medium mb-3">
+                          UV Index
+                        </h4>
+                        <img
+                          src="/uvindex.gif"
+                          alt="uv index"
+                          width={60}
+                          height={60}
+                          className="mx-auto mb-3"
+                        />
+                        <div className="text-xl font-bold text-gray-800">
+                          0.0
+                        </div>
+                        <div className="text-sm text-green-600 font-medium">
+                          Safe
                         </div>
                       </div>
                     </div>

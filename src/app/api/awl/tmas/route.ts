@@ -4,7 +4,8 @@ import { NextResponse } from "next/server";
 
 export const GET = async () => {
   try {
-    const data = await prisma.tMASData.findMany(); // Fetch all data
+    const data = await prisma.tMASData.findMany();
+    console.log("Fetched data:", data);
 
     return NextResponse.json({ data });
   } catch (error) {

@@ -1,6 +1,6 @@
 "use client";
 import { ColumnDef } from "@tanstack/react-table";
-import React, { Dispatch, SetStateAction } from "react";
+import React from "react";
 import TableActionDropdown from "@/components/Dropdown/TableActionDropdown";
 
 import { AlatAWS } from "@/shared/type";
@@ -34,7 +34,8 @@ const AWSColumn = (
             className="flex space-x-2 text-primary-60 underline cursor-pointer"
             onClick={() => {
               setShowModal(true);
-            }}>
+            }}
+          >
             <div>
               <div className="text-primary-60 font-semibold">
                 {info.row.original.detailName ?? "-"}
@@ -132,7 +133,8 @@ const AWSColumn = (
                           )}
                           onClick={() => {
                             setShowModal(true);
-                          }}>
+                          }}
+                        >
                           Export PDF
                         </div>
                       )}

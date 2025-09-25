@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -12,7 +12,7 @@ import SumberSidebar from "./SumberSidebar";
 import LaporanSidebar from "./LaporanSidebar";
 import RouterComponent from "./RouterComponent";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCloudBolt, faMapLocation } from "@fortawesome/free-solid-svg-icons";
+import { faMapLocation } from "@fortawesome/free-solid-svg-icons";
 
 function SideBar() {
   const [isOpen, setIsOpen] = useState(true);
@@ -23,7 +23,8 @@ function SideBar() {
     <div
       className={`${
         isOpen ? "min-w-[280px]" : "min-w-[100px]"
-      } h-screen flex flex-col bg-white overflow-auto transition-width duration-300 easy border-r border-gray-20`}>
+      } h-screen flex flex-col bg-white overflow-auto transition-width duration-300 easy border-r border-gray-20`}
+    >
       <div className="px-9 flex bg-white items-center space-x-1.5 py-8 sticky top-0">
         <Image
           src={isOpen ? "/logo.svg" : "/logo_no_text.svg"}
@@ -39,7 +40,8 @@ function SideBar() {
           className="flex h-[50px] pl-8 items-center cursor-pointer text-gray-80 "
           onClick={() => {
             setIsOpen(!isOpen);
-          }}>
+          }}
+        >
           {isOpen ? (
             <div className="flex space-x-3 items-center h-[50px]">
               <ChevronLeftOutline
@@ -94,7 +96,8 @@ function SideBar() {
         onClick={() => {
           router.replace("/login");
         }}
-        className="flex bg-white border-t">
+        className="flex bg-white border-t"
+      >
         <div className="h-[80px] p-6 items-center flex w-full">
           {isOpen && (
             <div className="w-[80%] flex-grow">
