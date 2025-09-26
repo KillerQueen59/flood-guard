@@ -1,19 +1,16 @@
-import { toast } from "react-toastify";
+import { createClientComponentClient } from "@/lib/supabase-clients";
 
 export const login = async (data: { email: string; password: string }) => {
-  const response = await fetch("/api/user", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
+  const supabase = createClientComponentClient();
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: data.email,
+    password: data.password,
   });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    toast.error(errorData.error);
-    throw new Error(errorData.error || "Login failed");
+  if (error) {
+    throw new Error(error.message);
   }
-  const result = await response.json();
-  return result;
+
+  return { message: "Login successful!" };
 };

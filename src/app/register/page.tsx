@@ -6,16 +6,16 @@ import Button, { ButtonSize } from "@/components/Button";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { validationSchema } from "./loginschema";
+import { validationSchema } from "../login/loginschema";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 
-export default function Login() {
+export default function Register() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signUp } = useAuth();
   const { control, handleSubmit } = useForm({
     resolver: yupResolver(validationSchema),
   });
@@ -23,16 +23,16 @@ export default function Login() {
   // Handle form submission
   const onSubmit = async (data: { email: string; password: string }) => {
     try {
-      const { error } = await signIn(data.email, data.password);
+      const { error } = await signUp(data.email, data.password);
 
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success("Login successful!");
-        router.push("/dashboard");
+        toast.success("Registration successful! ");
+        router.push("/login");
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Registration error:", error);
       toast.error("An unexpected error occurred");
     }
   };
@@ -53,8 +53,9 @@ export default function Login() {
       </div>
 
       <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
-        Login
+        Create Account
       </h2>
+
       <InputField
         control={control}
         name={"email"}
@@ -73,18 +74,18 @@ export default function Login() {
       <div className="my-5 flex"></div>
       <Button
         type="submit"
-        label="Login"
+        label="Register"
         buttonSize={ButtonSize.LARGE}
         fullWidth
         onClick={() => {}}
       />
 
       <div className="text-center mt-4">
-        <span className="text-gray-600">Don&apos;t have an account? </span>
+        <span className="text-gray-600">Already have an account? </span>
         <Link
-          href="/register"
+          href="/login"
           className="text-blue-600 hover:text-blue-800 underline">
-          Register here
+          Login here
         </Link>
       </div>
     </form>

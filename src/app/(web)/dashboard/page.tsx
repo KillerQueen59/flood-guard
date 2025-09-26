@@ -24,11 +24,14 @@ export default function Dashboard() {
     setKebun,
   } = useDashboardImpl();
 
-  console.log("AWL dashboard:", awlDashboard);
-  console.log("AWS dashboard:", awsDashboard);
-
   return (
     <div className="m-4">
+      {/* Header with user info and logout */}
+      {/* <div className="flex justify-between items-center mb-4 p-4 bg-white rounded-lg shadow">
+        <UserInfo />
+        <LogoutButton />
+      </div> */}
+
       <div className="py-8 px-4 space-x-4 flex h-[112px]">
         <CustomSelectField
           options={pts}

@@ -13,11 +13,18 @@ import LaporanSidebar from "./LaporanSidebar";
 import RouterComponent from "./RouterComponent";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMapLocation } from "@fortawesome/free-solid-svg-icons";
+import { useAuth } from "@/contexts/AuthContext";
 
 function SideBar() {
   const [isOpen, setIsOpen] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+  const { user, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    router.replace("/login");
+  };
 
   return (
     <div
@@ -92,16 +99,15 @@ function SideBar() {
       </div>
       <div
         onClick={() => {
-          router.replace("/login");
+          handleLogout();
         }}
         className="flex bg-white border-t">
         <div className="h-[80px] p-6 items-center flex w-full">
           {isOpen && (
             <div className="w-[80%] flex-grow">
               <div className="text-gray-80 text-sm font-semibold">
-                {"Admin"}
+                {user?.email}
               </div>
-              <div className="text-gray-70">{"Admin"}</div>
             </div>
           )}
 
