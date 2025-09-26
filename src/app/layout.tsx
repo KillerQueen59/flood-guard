@@ -5,9 +5,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Peatwatch ID",
+  title: "Flood Guard",
   icons: {
-    icon: "/logo_no_text.svg",
+    icon: "/flood_guard_logo.svg",
   },
 };
 

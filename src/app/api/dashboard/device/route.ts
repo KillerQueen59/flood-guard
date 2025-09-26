@@ -1,17 +1,80 @@
-// app/api/awl/route.ts
-import prisma from "@/utils/db";
+// app/api/dashboard/device/route.ts
 import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
-export const GET = async () => {
+const prisma = new PrismaClient();
+
+export async function GET() {
   try {
-    const data = await prisma.device.findMany(); // Fetch all data
+    // Fetch AWS devices
+    const awsDevices = await prisma.alatAWS.findMany({
+      include: {
+        kebun: {
+          include: {
+            pt: true,
+          },
+        },
+      },
+    });
 
-    return NextResponse.json({ data });
+    // Fetch AWL devices
+    const awlDevices = await prisma.alatAWL.findMany({
+      include: {
+        kebun: {
+          include: {
+            pt: true,
+          },
+        },
+      },
+    });
+
+    // Combine and format devices
+    const allDevices = [
+      ...awsDevices.map((device) => ({
+        id: device.id,
+        name: device.name,
+        detailName: device.detailName,
+        type: "AWS",
+        status: device.status,
+        battery: device.battery,
+        signal: device.signal,
+        kebunId: device.kebunId,
+        kebunName: device.kebun.name,
+        sensor: device.sensor,
+        ptId: device.ptId,
+        ptName: device.kebun.pt.name,
+      })),
+      ...awlDevices.map((device) => ({
+        id: device.id,
+        name: device.name,
+        detailName: device.detailName,
+        type: "AWL",
+        status: device.status,
+        battery: device.battery,
+        signal: device.signal,
+        kebunId: device.kebunId,
+        kebunName: device.kebun.name,
+        ptId: device.ptId,
+        ptName: device.kebun.pt.name,
+      })),
+    ];
+
+    return NextResponse.json({
+      success: true,
+      data: allDevices,
+      message: `Found ${allDevices.length} devices`,
+    });
   } catch (error) {
-    console.error("Error fetching data:", error);
+    console.error("Error fetching device data:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      {
+        success: false,
+        message: "Failed to fetch device data",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
-};
+}

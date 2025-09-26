@@ -1,4 +1,4 @@
-import error from "next/error";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DropdownIndicatorProps, components } from "react-select";
 import Select from "react-select";
 import Image from "next/image";
@@ -26,6 +26,8 @@ const CustomSelect = ({
   placeholder,
   error,
 }: CustomSelectProps) => {
+  console.log("value", value);
+
   return (
     <Select
       options={options}
@@ -56,9 +58,7 @@ const CustomSelect = ({
         onChange(selectedOption.value);
       }}
       value={
-        options
-          ? options.find((option: any) => option.value === value?.value)
-          : ""
+        options ? options.find((option: any) => option.value === value) : ""
       }
       placeholder={placeholder ?? "Choose Select"}
       components={{ DropdownIndicator, IndicatorSeparator: () => null }}

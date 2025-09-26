@@ -9,26 +9,51 @@ datasource db {
 }
 
 model User {
-  id       String  @id @default(uuid())
-  email    String  @unique
-  name     String?
-  password String?
-  role     String?
+  id    String  @id @default(uuid())
+  email String  @unique
+  name  String?
+  role  String?
+}
+
+model PT {
+  id         String          @id @default(uuid())
+  name       String
+  kebuns     Kebun[]
+  alatAWS    AlatAWS[]
+  alatAWL    AlatAWL[]
+  dashboards AlatDashboard[]
+}
+
+model Kebun {
+  id          String          @id @default(uuid())
+  name        String
+  ptId        String
+  pt          PT              @relation(fields: [ptId], references: [id])
+  alatAWS     AlatAWS[]
+  alatAWL     AlatAWL[]
+  dashboards  AlatDashboard[]
+  weatherData WeatherData[]
+  tmasData    TMASData[]
 }
 
 model AlatAWS {
-  id         String @id @default(uuid())
-  name       String
-  detailName String
-  startDate  String
-  battery    Int
-  signal     Int
-  sensor     Int
-  status     String
+  id          String        @id @default(uuid())
+  name        String
+  detailName  String
+  startDate   String
+  battery     Int
+  signal      Int
+  sensor      Int
+  status      String
+  ptId        String
+  kebunId     String
+  pt          PT            @relation(fields: [ptId], references: [id])
+  kebun       Kebun         @relation(fields: [kebunId], references: [id])
+  weatherData WeatherData[]
 }
 
 model AlatAWL {
-  id         String @id @default(uuid())
+  id         String     @id @default(uuid())
   name       String
   detailName String
   startDate  String
@@ -37,36 +62,30 @@ model AlatAWL {
   data       Int
   status     String
   note       String
-}
-
-model PT {
-  id   String @id @default(uuid())
-  name String
-}
-
-model Kebun {
-  id   String @id @default(uuid())
-  name String
-}
-
-model Device {
-  id   String @id @default(uuid())
-  name String
+  ptId       String
+  kebunId    String
+  pt         PT         @relation(fields: [ptId], references: [id])
+  kebun      Kebun      @relation(fields: [kebunId], references: [id])
+  tmasData   TMASData[]
 }
 
 model AlatDashboard {
-  id     String @id @default(uuid())
-  pt     String
-  kebun  String
-  rusak  Int
-  idle   Int
-  active Int
-  alert  Int
+  id      String @id @default(uuid())
+  ptId    String
+  kebunId String
+  rusak   Int
+  idle    Int
+  active  Int
+  alert   Int
+  pt      PT     @relation(fields: [ptId], references: [id])
+  kebun   Kebun  @relation(fields: [kebunId], references: [id])
+
+  @@unique([ptId, kebunId])
 }
 
 model WeatherData {
-  id                Int    @id @default(autoincrement())
-  tanggal           String
+  id                Int      @id @default(autoincrement())
+  tanggal           DateTime
   year              Int
   suhuRataRata      Float
   ch                Float
@@ -78,16 +97,20 @@ model WeatherData {
   suhuMaksimal      Float
   evapotranspirasi  Float
   radiasiSolarPanel Float
+  kebunId           String
+  awsId             String
+  kebun             Kebun    @relation(fields: [kebunId], references: [id])
+  alatAWS           AlatAWS  @relation(fields: [awsId], references: [id])
+  createdAt         DateTime @default(now())
 }
 
 model TMASData {
-  id         Int    @id @default(autoincrement())
-  tanggal    String
+  id         Int      @id @default(autoincrement())
+  tanggal    DateTime
   ketinggian Float
-}
-
-model TMATData {
-  id         Int    @id @default(autoincrement())
-  tanggal    String
-  ketinggian Float
+  kebunId    String
+  awlId      String
+  kebun      Kebun    @relation(fields: [kebunId], references: [id])
+  alatAWL    AlatAWL  @relation(fields: [awlId], references: [id])
+  createdAt  DateTime @default(now())
 }

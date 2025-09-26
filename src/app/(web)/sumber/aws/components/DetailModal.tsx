@@ -19,8 +19,7 @@ const DetailModal = ({ show = false, onClose }: DetailModalProps) => {
         className="z-50 fixed inset-0 flex justify-center items-center bg-black/60 backdrop-blur-sm"
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
-        }}
-      >
+        }}>
         <div className="flex flex-col w-[95%] max-w-7xl bg-white rounded-2xl max-h-[95%] min-h-[600px] shadow-2xl border border-gray-200">
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl border-b border-gray-200">
@@ -42,8 +41,7 @@ const DetailModal = ({ show = false, onClose }: DetailModalProps) => {
                 />
                 <button
                   className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                  onClick={onClose}
-                >
+                  onClick={onClose}>
                   <CloseIcon />
                 </button>
               </div>
@@ -62,7 +60,7 @@ const DetailModal = ({ show = false, onClose }: DetailModalProps) => {
               <div className="flex items-center space-x-3">
                 <span className="text-gray-600 font-medium">Last Updated:</span>
                 <span className="text-gray-800 font-mono bg-white px-3 py-1 rounded-md border">
-                  2024-09-19 06:00:00
+                  2025-09-25 06:00:00
                 </span>
               </div>
             </div>

@@ -42,10 +42,12 @@ function Button({
   type = "button",
 }: ButtonProps) {
   const baseClasses = clsx(
-    "flex max-h-[48px] items-center rounded-xl px-4 space-x-[4px]",
+    "flex max-h-[48px] items-center rounded-xl px-4 space-x-[4px] transition-all duration-200 ease-in-out",
     buttonSize,
     fullWidth && "w-full",
-    disabled ? "bg-opacity-30 cursor-not-allowed" : "hover:bg-opacity-70",
+    disabled
+      ? "bg-opacity-30 cursor-not-allowed"
+      : "cursor-pointer hover:bg-opacity-80 hover:scale-105 hover:shadow-md active:scale-95",
     buttonType === ButtonType.OUTLINED ? "border" : ""
   );
 
@@ -56,11 +58,13 @@ function Button({
       buttonType === ButtonType.FILL && buttonColor === ButtonColor.SECONDARY,
     "bg-danger-60":
       buttonType === ButtonType.FILL && buttonColor === ButtonColor.DANGER,
-    "text-danger-60":
+    "text-danger-60 border-danger-60 hover:bg-danger-60 hover:text-white":
       buttonType === ButtonType.OUTLINED && buttonColor === ButtonColor.DANGER,
-    "text-gray-100":
+    "text-gray-100 border-gray-100 hover:bg-gray-100 hover:text-white":
       buttonType === ButtonType.OUTLINED &&
       buttonColor === ButtonColor.SECONDARY,
+    "text-primary-60 border-primary-60 hover:bg-primary-60 hover:text-white":
+      buttonType === ButtonType.OUTLINED && buttonColor === ButtonColor.PRIMARY,
     "text-white": buttonType === ButtonType.FILL,
   });
 

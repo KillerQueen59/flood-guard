@@ -37,9 +37,25 @@ export const getDevice = async () => {
   }
 };
 
-export const getAWS = async () => {
+export const getAWS = async (filters?: {
+  pt?: string;
+  kebun?: string;
+  device?: string;
+  date?: string;
+}) => {
   try {
-    const res = await fetch("/api/aws/laporan");
+    const params = new URLSearchParams();
+
+    if (filters?.pt) params.append("pt", filters.pt);
+    if (filters?.kebun) params.append("kebun", filters.kebun);
+    if (filters?.device) params.append("device", filters.device);
+    if (filters?.date) params.append("date", filters.date);
+
+    const url = `/api/aws/laporan${
+      params.toString() ? "?" + params.toString() : ""
+    }`;
+
+    const res = await fetch(url);
     if (!res.ok) {
       throw new Error("Failed to fetch data");
     }

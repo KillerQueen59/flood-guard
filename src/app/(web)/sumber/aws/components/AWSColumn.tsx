@@ -34,8 +34,7 @@ const AWSColumn = (
             className="flex space-x-2 text-primary-60 underline cursor-pointer"
             onClick={() => {
               setShowModal(true);
-            }}
-          >
+            }}>
             <div>
               <div className="text-primary-60 font-semibold">
                 {info.row.original.detailName ?? "-"}
@@ -96,7 +95,7 @@ const AWSColumn = (
         minSize: Math.round((global?.window && window.innerHeight - 55) * 0.2),
         cell: (info) => (
           <div>
-            {info.row.original.status == "Normal" ? (
+            {info.row.original.status == "active" ? (
               <CheckCircle
                 className="text-success-60"
                 size={20}
@@ -133,8 +132,7 @@ const AWSColumn = (
                           )}
                           onClick={() => {
                             setShowModal(true);
-                          }}
-                        >
+                          }}>
                           Export PDF
                         </div>
                       )}

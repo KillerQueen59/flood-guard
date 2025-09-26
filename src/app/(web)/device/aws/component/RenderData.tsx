@@ -8,7 +8,7 @@ import dayjs from "dayjs";
 import { SetStateAction } from "react";
 
 export type Data = {
-  tanggal: string;
+  tanggal: string | Date; // Can be either string or Date object
   year: number;
   suhuRataRata: number;
   ch: number;
@@ -50,8 +50,6 @@ export const RenderData = ({
   kebun: string;
   device: string;
 }) => {
-  console.log("label", label);
-
   switch (tipe) {
     case "evaportranpiration":
       return (
@@ -99,6 +97,25 @@ export const RenderData = ({
         />
       );
     case "rainfall":
+      const rainfallZone = [
+        { min: 0, max: 5, color: "rgba(76, 175, 80, 0.1)" },
+        { min: 5, max: 20, color: "rgba(255, 235, 59, 0.1)" },
+        { min: 20, max: 50, color: "rgba(255, 152, 0, 0.1)" },
+        { min: 50, max: 200, color: "rgba(244, 67, 54, 0.1)" },
+      ];
+
+      const rainfallLines = [
+        { value: 5, color: "#4CAF50", label: "5 mm" },
+        { value: 20, color: "#FFC107", label: "20 mm" },
+        { value: 50, color: "#FF9800", label: "50 mm" },
+      ];
+
+      const rainfallLegend = [
+        { color: "#4CAF50", label: "Safe (0-5 mm)" },
+        { color: "#FFC107", label: "Caution (5 - 20 mm)" },
+        { color: "#FF9800", label: "Warning (20-50 mm)" },
+        { color: "#F44336", label: "Critical (>50 mm)" },
+      ];
       return (
         <BarChart
           label={label}
@@ -118,6 +135,10 @@ export const RenderData = ({
           pt={pt}
           kebun={kebun}
           device={device}
+          showBackgroundZones={true}
+          referenceZones={rainfallZone}
+          referenceLines={rainfallLines}
+          customLegend={rainfallLegend}
         />
       );
     case "rainRate":
@@ -234,9 +255,11 @@ export const RenderData = ({
         <TableChart
           upperTitle="Laporan AWS"
           data={data.map((data) => {
+            // Handle both DateTime objects and string dates
+            const dateTime = dayjs(data.tanggal);
             return {
-              date: data.tanggal.split(" ")[0],
-              time: data.tanggal.split(" ")[1],
+              date: dateTime.format("DD/MM/YYYY"),
+              time: dateTime.format("HH:mm"),
               direction: getWindDirection(data.windDirec),
               data: data.windDirec,
             };

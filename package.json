@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.6.0",
@@ -20,6 +21,7 @@
     "@types/canvasjs": "^1.9.11",
     "@types/file-saver": "^2.0.7",
     "@types/json2csv": "^5.0.7",
+    "@types/shpjs": "^3.4.7",
     "chart.js": "^4.4.6",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.13",
@@ -45,7 +47,9 @@
     "react-toastify": "^10.0.6",
     "recoil": "^0.7.7",
     "recoil-nexus": "^0.5.1",
+    "shpjs": "^6.1.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.5",
     "yup": "^1.4.0"
   },
   "devDependencies": {

@@ -37,9 +37,25 @@ export const getDevice = async () => {
   }
 };
 
-export const getTmas = async () => {
+export const getTmas = async (filters?: {
+  pt?: string;
+  kebun?: string;
+  device?: string;
+  date?: string;
+}) => {
   try {
-    const res = await fetch("/api/awl/tmas");
+    const params = new URLSearchParams();
+
+    if (filters?.pt) params.append("pt", filters.pt);
+    if (filters?.kebun) params.append("kebun", filters.kebun);
+    if (filters?.device) params.append("device", filters.device);
+    if (filters?.date) params.append("date", filters.date);
+
+    const url = `/api/awl/tmas${
+      params.toString() ? "?" + params.toString() : ""
+    }`;
+
+    const res = await fetch(url);
     if (!res.ok) {
       throw new Error("Failed to fetch data");
     }

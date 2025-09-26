@@ -34,6 +34,24 @@ ChartJS.register(
   Filler
 );
 
+type ReferenceZone = {
+  min: number;
+  max: number;
+  color: string;
+  label?: string;
+};
+
+type ReferenceLine = {
+  value: number;
+  color: string;
+  label?: string;
+};
+
+type LegendItem = {
+  color: string;
+  label: string;
+};
+
 type LineChartFillerProps = {
   label: string[];
   title?: string;
@@ -54,6 +72,11 @@ type LineChartFillerProps = {
   pt: string;
   kebun: string;
   device: string;
+  // New optional props for reference lines and zones
+  referenceZones?: ReferenceZone[];
+  referenceLines?: ReferenceLine[];
+  customLegend?: LegendItem[];
+  showBackgroundZones?: boolean;
 };
 
 function LineChartFiller({
@@ -74,6 +97,10 @@ function LineChartFiller({
   pt,
   kebun,
   device,
+  referenceZones,
+  referenceLines,
+  customLegend,
+  showBackgroundZones = false,
 }: LineChartFillerProps) {
   const dataset = React.useMemo(() => {
     const _dataset: any[] = [];
@@ -85,9 +112,10 @@ function LineChartFiller({
           const ctx = context.chart.ctx;
           const gradient = ctx.createLinearGradient(0, 0, 0, 200);
           gradient.addColorStop(0, "rgba(71,157,255,0.5)");
-          gradient.addColorStop(1, "rgba(71,157,255,0.5)");
+          gradient.addColorStop(1, "rgba(71,157,255,0.1)");
           return gradient;
         },
+        borderColor: colors[0],
         tension: 0.2,
         hitRadius: 10,
       });
@@ -177,21 +205,88 @@ function LineChartFiller({
     },
   };
 
-  const { pictureComponent } = useCapture(id);
+  const backgroundZonesPlugin = {
+    id: "backgroundZones",
+    beforeDraw: (chart: any) => {
+      if (!showBackgroundZones || !referenceZones) return;
+
+      const ctx = chart.ctx;
+      const chartArea = chart.chartArea;
+      const yScale = chart.scales.y;
+
+      if (!chartArea || !yScale) return;
+
+      // Draw background zones
+      referenceZones.forEach((zone) => {
+        const yTop = yScale.getPixelForValue(zone.max);
+        const yBottom = yScale.getPixelForValue(zone.min);
+
+        ctx.save();
+        ctx.fillStyle = zone.color;
+        ctx.fillRect(
+          chartArea.left,
+          yTop,
+          chartArea.right - chartArea.left,
+          yBottom - yTop
+        );
+        ctx.restore();
+      });
+
+      // Draw reference lines if provided
+      if (referenceLines) {
+        referenceLines.forEach((line) => {
+          const y = yScale.getPixelForValue(line.value);
+
+          ctx.save();
+          ctx.strokeStyle = line.color;
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.moveTo(chartArea.left, y);
+          ctx.lineTo(chartArea.right, y);
+          ctx.stroke();
+          ctx.restore();
+
+          // Add labels for reference lines if provided
+          if (line.label) {
+            ctx.save();
+            ctx.fillStyle = line.color;
+            ctx.font = "12px Arial";
+            ctx.textAlign = "right";
+            ctx.fillText(line.label, chartArea.right - 5, y - 5);
+            ctx.restore();
+          }
+        });
+      }
+    },
+  };
+
+  const { pictureComponent, captureComponent } = useCapture(id);
 
   return (
     <div className={clsx("p-6 bg-white rounded-2xl flex flex-col", className)}>
-      <div className="flex">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-0">
         <div className="h6 my-2 flex-grow">{upperTitle}</div>
-        <Button
-          label="Download Grafik"
-          onClick={() => {
-            pictureComponent(id, "png");
-          }}
-          buttonSize={ButtonSize.SMALL}
-          buttonColor={ButtonColor.SECONDARY}
-          buttonType={ButtonType.OUTLINED}
-        />
+        <div className="flex gap-2 justify-center sm:justify-end">
+          <Button
+            label="PNG"
+            onClick={() => {
+              pictureComponent(id, "png");
+            }}
+            buttonSize={ButtonSize.SMALL}
+            buttonColor={ButtonColor.SECONDARY}
+            buttonType={ButtonType.OUTLINED}
+          />
+          <Button
+            label="PDF"
+            onClick={() => {
+              captureComponent(id);
+            }}
+            buttonSize={ButtonSize.SMALL}
+            buttonColor={ButtonColor.PRIMARY}
+            buttonType={ButtonType.OUTLINED}
+          />
+        </div>
       </div>
       <div className="p-4" id={id}>
         <div className="flex flex-col space-y-1 my-4">
@@ -216,10 +311,30 @@ function LineChartFiller({
             <div className="w-[89%]">{selectedDate ?? "-"}</div>
           </div>
         </div>
+        <div className="text-lg text-center">{title}</div>
+
+        {/* Custom Legend - only show if provided */}
+        {customLegend && customLegend.length > 0 && (
+          <div className="flex justify-center my-4">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm">
+              {customLegend.map((item, index) => (
+                <div key={index} className="flex items-center">
+                  <div
+                    className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 rounded"
+                    style={{ backgroundColor: item.color }}></div>
+                  <span className="font-medium" style={{ color: item.color }}>
+                    {item.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex-1 my-4 min-h-[300px]">
           <Line
             data={_data}
-            plugins={[clickableLine]}
+            plugins={[clickableLine, backgroundZonesPlugin]}
             options={{
               responsive: true,
               maintainAspectRatio: false,
@@ -228,16 +343,15 @@ function LineChartFiller({
                   display: false,
                 },
                 tooltip: {
-                  enabled: true, // Enable tooltip on hover
+                  enabled: true,
                   callbacks: {
                     title: function (tooltipItems: any) {
-                      // You can customize this to be whatever title you want
                       return `Waktu: ${tooltipItems[0].label}`;
                     },
                     label: function (tooltipItem: any) {
                       return `${dataType ?? title}: ${tooltipItem.raw} ${
                         dataSatuan ?? ""
-                      }`; // Custom label
+                      }`;
                     },
                   },
                 },
@@ -248,6 +362,7 @@ function LineChartFiller({
                     display: yAxisTitle !== "",
                     text: yAxisTitle,
                   },
+                  beginAtZero: true,
                 },
                 x: {
                   title: {
