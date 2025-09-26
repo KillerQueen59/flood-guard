@@ -1,12 +1,8 @@
 "use client";
 import { ColumnDef } from "@tanstack/react-table";
-import React, { Dispatch, SetStateAction } from "react";
-import TableActionDropdown from "@/components/Dropdown/TableActionDropdown";
-
-import { AlatAWL, AlatAWS } from "@/shared/type";
+import React from "react";
+import { AlatAWL } from "@/shared/type";
 import { date } from "@/shared/date";
-import { MenuItem } from "@headlessui/react";
-import clsx from "clsx";
 import { CheckCircle, XCircle } from "heroicons-react";
 
 const AWLColumn = () => {
@@ -94,7 +90,7 @@ const AWLColumn = () => {
         minSize: Math.round((global?.window && window.innerHeight - 55) * 0.2),
         cell: (info) => (
           <div>
-            {info.row.original.status == "Normal" ? (
+            {info.row.original.status == "active" ? (
               <CheckCircle
                 className="text-success-60"
                 size={20}

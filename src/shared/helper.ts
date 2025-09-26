@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const changeTailwindToHex = (color: string) => {
   switch (color) {
     case "bg-indicator-red":
@@ -95,6 +96,7 @@ export function getWindDirection(degrees: number) {
 
 export const convertToLabelValue = (data: any, selectedKebun: any) => {
   if (!selectedKebun) {
+    // Sum all data regardless of device type (since we're filtering by device type at API level)
     const totals = {
       rusak: 0,
       idle: 0,
@@ -103,10 +105,10 @@ export const convertToLabelValue = (data: any, selectedKebun: any) => {
     };
 
     data.forEach((item: any) => {
-      totals.rusak += item.rusak;
-      totals.idle += item.idle;
-      totals.active += item.active;
-      totals.alert += item.alert;
+      totals.rusak += item.rusak || 0;
+      totals.idle += item.idle || 0;
+      totals.active += item.active || 0;
+      totals.alert += item.alert || 0;
     });
 
     return [
@@ -117,16 +119,27 @@ export const convertToLabelValue = (data: any, selectedKebun: any) => {
     ];
   }
 
-  const entry = data.find((item: any) => item.kebun === selectedKebun);
+  // Find entry by kebunName (since our API returns kebunName)
+  const entry = data.find(
+    (item: any) =>
+      item.kebun === selectedKebun ||
+      item.kebunName === selectedKebun ||
+      item.kebun_name === selectedKebun
+  );
 
   if (entry) {
     return [
-      { label: "Rusak", value: entry.rusak },
-      { label: "Idle", value: entry.idle },
-      { label: "Active", value: entry.active },
-      { label: "Alert", value: entry.alert },
+      { label: "Rusak", value: entry.rusak || 0 },
+      { label: "Idle", value: entry.idle || 0 },
+      { label: "Active", value: entry.active || 0 },
+      { label: "Alert", value: entry.alert || 0 },
     ];
   }
 
-  return [];
+  return [
+    { label: "Rusak", value: 0 },
+    { label: "Idle", value: 0 },
+    { label: "Active", value: 0 },
+    { label: "Alert", value: 0 },
+  ];
 };

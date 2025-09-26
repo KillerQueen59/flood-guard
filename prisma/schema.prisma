@@ -70,17 +70,18 @@ model AlatAWL {
 }
 
 model AlatDashboard {
-  id      String @id @default(uuid())
-  ptId    String
-  kebunId String
-  rusak   Int
-  idle    Int
-  active  Int
-  alert   Int
-  pt      PT     @relation(fields: [ptId], references: [id])
-  kebun   Kebun  @relation(fields: [kebunId], references: [id])
+  id         String @id @default(uuid())
+  ptId       String
+  kebunId    String
+  deviceType String // "AWL" or "AWS"
+  rusak      Int
+  idle       Int
+  active     Int
+  alert      Int
+  pt         PT     @relation(fields: [ptId], references: [id])
+  kebun      Kebun  @relation(fields: [kebunId], references: [id])
 
-  @@unique([ptId, kebunId])
+  @@unique([ptId, kebunId, deviceType])
 }
 
 model WeatherData {

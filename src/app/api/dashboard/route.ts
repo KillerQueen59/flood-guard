@@ -1,13 +1,32 @@
 // app/api/dashboard/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   getDashboardData,
   updateDashboardAggregations,
 } from "@/utils/dashboardAggregation";
 
-export const GET = async () => {
+export const GET = async (request: NextRequest) => {
   try {
-    const data = await getDashboardData();
+    // Extract query parameters
+    const { searchParams } = new URL(request.url);
+    const pt = searchParams.get("pt");
+    const kebun = searchParams.get("kebun");
+    const deviceType = searchParams.get("deviceType");
+
+    // Create filters object
+    const filters = {
+      ...(pt && pt !== "" && { pt }),
+      ...(kebun && kebun !== "" && { kebun }),
+      ...(deviceType && deviceType !== "" && { deviceType }),
+    };
+
+    console.log("Dashboard API filters:", filters); // Debug log
+
+    // Pass filters to your data fetching function
+    const data = await getDashboardData(filters);
+
+    console.log("Dashboard API data length:", data.length); // Debug log
+
     return NextResponse.json({ data });
   } catch (error) {
     console.error("Error fetching dashboard data:", error);

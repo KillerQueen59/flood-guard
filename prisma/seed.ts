@@ -163,6 +163,7 @@ async function main() {
     createdAWSDevices.push({
       id: awsData.id,
       kebunId: awsData.kebunId,
+      ptId: awsData.ptId,
       status: awsData.status,
     });
 
@@ -225,38 +226,84 @@ async function main() {
     createdAWLDevices.push({
       id: awlData.id,
       kebunId: awlData.kebunId,
+      ptId: awlData.ptId,
       status: awlData.status,
     });
 
     awlCounter++;
   }
 
-  // Create AlatDashboard aggregations for each PT-Kebun combination
-  console.log("Seeding AlatDashboard data...");
+  // Create AlatDashboard aggregations for each PT-Kebun-DeviceType combination
+  console.log("Seeding AlatDashboard data with deviceType...");
 
-  for (let kebunId = 1; kebunId <= 4; kebunId++) {
-    const ptId = kebunId <= 2 ? "1" : "2";
-    const kebunDevices = deviceConfigs.filter(
-      (config) => config.kebunId === kebunId.toString()
+  // Get unique PT-Kebun combinations from actual created devices
+  const uniqueCombinations = new Set<string>();
+  [...createdAWSDevices, ...createdAWLDevices].forEach((device) => {
+    uniqueCombinations.add(`${device.ptId}-${device.kebunId}`);
+  });
+
+  for (const combination of uniqueCombinations) {
+    const [ptId, kebunId] = combination.split("-");
+
+    // Get AWL devices for this PT-Kebun combination
+    const awlDevicesInKebun = createdAWLDevices.filter(
+      (device) => device.ptId === ptId && device.kebunId === kebunId
     );
 
-    const statusCounts = {
-      rusak: kebunDevices.filter((d) => d.status === "rusak").length,
-      idle: kebunDevices.filter((d) => d.status === "idle").length,
-      active: kebunDevices.filter((d) => d.status === "active").length,
-      alert: kebunDevices.filter((d) => d.status === "alert").length,
+    // Get AWS devices for this PT-Kebun combination
+    const awsDevicesInKebun = createdAWSDevices.filter(
+      (device) => device.ptId === ptId && device.kebunId === kebunId
+    );
+
+    // Calculate AWL status counts
+    const awlStatusCounts = {
+      rusak: awlDevicesInKebun.filter((d) => d.status === "rusak").length,
+      idle: awlDevicesInKebun.filter((d) => d.status === "idle").length,
+      active: awlDevicesInKebun.filter((d) => d.status === "active").length,
+      alert: awlDevicesInKebun.filter((d) => d.status === "alert").length,
     };
 
+    // Calculate AWS status counts
+    const awsStatusCounts = {
+      rusak: awsDevicesInKebun.filter((d) => d.status === "rusak").length,
+      idle: awsDevicesInKebun.filter((d) => d.status === "idle").length,
+      active: awsDevicesInKebun.filter((d) => d.status === "active").length,
+      alert: awsDevicesInKebun.filter((d) => d.status === "alert").length,
+    };
+
+    // Create AWL dashboard record
     await prisma.alatDashboard.create({
       data: {
         ptId,
-        kebunId: kebunId.toString(),
-        rusak: statusCounts.rusak,
-        idle: statusCounts.idle,
-        active: statusCounts.active,
-        alert: statusCounts.alert,
+        kebunId,
+        deviceType: "AWL",
+        rusak: awlStatusCounts.rusak,
+        idle: awlStatusCounts.idle,
+        active: awlStatusCounts.active,
+        alert: awlStatusCounts.alert,
       },
     });
+
+    // Create AWS dashboard record
+    await prisma.alatDashboard.create({
+      data: {
+        ptId,
+        kebunId,
+        deviceType: "AWS",
+        rusak: awsStatusCounts.rusak,
+        idle: awsStatusCounts.idle,
+        active: awsStatusCounts.active,
+        alert: awsStatusCounts.alert,
+      },
+    });
+
+    console.log(`Created dashboard records for PT ${ptId}, Kebun ${kebunId}:`);
+    console.log(
+      `  AWL - Active: ${awlStatusCounts.active}, Alert: ${awlStatusCounts.alert}, Rusak: ${awlStatusCounts.rusak}, Idle: ${awlStatusCounts.idle}`
+    );
+    console.log(
+      `  AWS - Active: ${awsStatusCounts.active}, Alert: ${awsStatusCounts.alert}, Rusak: ${awsStatusCounts.rusak}, Idle: ${awsStatusCounts.idle}`
+    );
   }
 
   // Create WeatherData records for September 25, 2025 (hourly data for each AWS device)
@@ -353,13 +400,18 @@ async function main() {
     await prisma.tMASData.create({ data: tmas });
   }
 
+  // Calculate total dashboard records created
+  const totalDashboardRecords = uniqueCombinations.size * 2; // 2 device types per combination
+
   // Print summary
   console.log("\n=== SEED SUMMARY ===");
   console.log(`✅ Created 2 PT companies`);
   console.log(`✅ Created 4 Kebuns (2 per PT)`);
   console.log(`✅ Created ${createdAWSDevices.length} AWS devices`);
   console.log(`✅ Created ${createdAWLDevices.length} AWL devices`);
-  console.log(`✅ Created 4 AlatDashboard records`);
+  console.log(
+    `✅ Created ${totalDashboardRecords} AlatDashboard records (${uniqueCombinations.size} PT-Kebun combinations × 2 device types)`
+  );
 
   const activeAWSCount = createdAWSDevices.filter(
     (d) => d.status === "active"
@@ -376,9 +428,10 @@ async function main() {
   );
 
   // Status distribution
-  const statusDist = deviceConfigs.reduce(
-    (acc: Record<string, number>, config: DeviceConfig) => {
-      acc[config.status] = (acc[config.status] || 0) + 1;
+  const allDevices = [...createdAWSDevices, ...createdAWLDevices];
+  const statusDist = allDevices.reduce(
+    (acc: Record<string, number>, device: any) => {
+      acc[device.status] = (acc[device.status] || 0) + 1;
       return acc;
     },
     {}
@@ -388,6 +441,18 @@ async function main() {
   Object.entries(statusDist).forEach(([status, count]) => {
     console.log(`  ${status}: ${count} devices`);
   });
+
+  // Device type distribution
+  console.log("\nDevice Type Distribution:");
+  console.log(`  AWL: ${createdAWLDevices.length} devices`);
+  console.log(`  AWS: ${createdAWSDevices.length} devices`);
+
+  console.log("\nDashboard Records Created:");
+  console.log(`  Total records: ${totalDashboardRecords}`);
+  console.log(`  PT-Kebun combinations: ${uniqueCombinations.size}`);
+  console.log(
+    `  Each combination has separate AWL and AWS dashboard aggregations`
+  );
 
   console.log("\nData Generation Details:");
   console.log(`  Target Date: September 25, 2025`);

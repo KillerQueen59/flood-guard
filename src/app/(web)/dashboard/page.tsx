@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import DoughnutChart from "@/components/Chart/DoughnutChart";
@@ -14,13 +15,17 @@ export default function Dashboard() {
     pts,
     kebun,
     kebuns,
-    dashboard,
+    awlDashboard, // <- Note: changed from 'dashboard' to 'awlDashboard'
+    awsDashboard, // <- Note: changed from 'dashboard' to 'awsDashboard'
     showModal,
-    loading: isLoading,
+    loading,
     setShowModal,
     setPt,
     setKebun,
   } = useDashboardImpl();
+
+  console.log("AWL dashboard:", awlDashboard);
+  console.log("AWS dashboard:", awsDashboard);
 
   return (
     <div className="m-4">
@@ -33,6 +38,7 @@ export default function Dashboard() {
           }}
           name={"pt"}
           label={"PT"}
+          // disabled={loading}
         />
         <CustomSelectField
           options={kebuns}
@@ -42,6 +48,7 @@ export default function Dashboard() {
           }}
           name={"kebun"}
           label={"Kebun"}
+          // disabled={loading}
         />
       </div>
       <SelectModal
@@ -52,49 +59,61 @@ export default function Dashboard() {
       />
 
       <div className={clsx("z-10 grid grid-cols-12 gap-4 mb-4 p-4", {})}>
-        <div className="col-span-4 ">
-          <DoughnutChart
-            title="AWL TMAS (Tinggi Muka Air Saluran)"
-            data={dashboard}
-            below
-            noLine
-            className="h-full"
-            onClick={() => {
-              console.log("clicked");
-            }}
-            subTitle={"Total"}
-            onStatusClicked={() => {
-              router.push("/sumber/awl");
-            }}
-            onLaporanHarianClicked={() => {
-              setShowModal(true);
-            }}
-            onLaporanBulananClicked={() => {
-              setShowModal(true);
-            }}
-          />
+        <div className="col-span-4 bg-white">
+          {loading ? (
+            <div className="h-full flex items-center justify-center bg-white rounded-lg shadow">
+              <div className="text-gray-500">Loading AWL data...</div>
+            </div>
+          ) : (
+            <DoughnutChart
+              title="AWL TMAS (Tinggi Muka Air Saluran)"
+              data={awlDashboard} // <- Using AWL-specific data
+              below
+              noLine
+              className="h-full"
+              onClick={() => {
+                console.log("AWL clicked");
+              }}
+              subTitle={"Total"}
+              onStatusClicked={() => {
+                router.push("/sumber/awl");
+              }}
+              onLaporanHarianClicked={() => {
+                setShowModal(true);
+              }}
+              onLaporanBulananClicked={() => {
+                setShowModal(true);
+              }}
+            />
+          )}
         </div>
-        <div className="col-span-4 ">
-          <DoughnutChart
-            title="AWS"
-            data={dashboard}
-            below
-            noLine
-            className="h-full"
-            onClick={() => {
-              console.log("clicked");
-            }}
-            subTitle={"Total"}
-            onStatusClicked={() => {
-              router.push("/sumber/aws");
-            }}
-            onLaporanHarianClicked={() => {
-              router.push("/device/aws");
-            }}
-            onLaporanBulananClicked={() => {
-              router.push("/device/aws");
-            }}
-          />
+        <div className="col-span-4">
+          {loading ? (
+            <div className="h-full flex items-center justify-center bg-white rounded-lg shadow">
+              <div className="text-gray-500">Loading AWS data...</div>
+            </div>
+          ) : (
+            <DoughnutChart
+              title="AWS"
+              data={awsDashboard} // <- Using AWS-specific data
+              below
+              noLine
+              className="h-full"
+              onClick={() => {
+                console.log("AWS clicked");
+              }}
+              subTitle={"Total"}
+              onStatusClicked={() => {
+                router.push("/sumber/aws");
+              }}
+              onLaporanHarianClicked={() => {
+                router.push("/device/aws");
+              }}
+              onLaporanBulananClicked={() => {
+                router.push("/device/aws");
+              }}
+            />
+          )}
         </div>
       </div>
     </div>
