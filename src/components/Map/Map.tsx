@@ -1,345 +1,361 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import georaster from "georaster";
-import GeoRasterLayer from "georaster-layer-for-leaflet";
 import L from "leaflet";
 import { ChevronLeftOutline } from "heroicons-react";
 import { useRouter } from "next/navigation";
 import shp from "shpjs";
 
-const TiffMap = () => {
+// Color function for runoff classification
+const getRunoffColor = (properties: any) => {
+  if (!properties) return "#999";
+
+  // Adjust these based on your actual data properties
+  const runoffClass = properties.KELAS || properties.CLASS || properties.runoff;
+
+  switch (runoffClass) {
+    case "Very Low":
+    case "Sangat Rendah":
+    case 1:
+      return "#00ff00";
+    case "Low":
+    case "Rendah":
+    case 2:
+      return "#90ee90";
+    case "Medium":
+    case "Sedang":
+    case 3:
+      return "#ffff00";
+    case "High":
+    case "Tinggi":
+    case 4:
+      return "#ffa500";
+    case "Very High":
+    case "Sangat Tinggi":
+    case 5:
+      return "#ff0000";
+    default:
+      return "#999";
+  }
+};
+
+// Helper function to get display name for layers
+const getDisplayName = (layerName: string) => {
+  if (layerName.includes("runoff") || layerName.includes("kelas")) {
+    return "Runoff Classification";
+  } else if (layerName.includes("iot") || layerName.includes("perangkat")) {
+    return "IoT Devices";
+  } else if (
+    layerName.includes("wilayah") ||
+    layerName.includes("das") ||
+    layerName.includes("watershed")
+  ) {
+    return "Watershed Boundary";
+  }
+  return layerName;
+};
+
+const FloodGuardMap = () => {
   const router = useRouter();
   const mapRef = React.useRef<any>();
-  const [tiffLayers, setTiffLayers] = useState<any[]>([]);
+  const [mounted, setMounted] = useState(false);
   const [shpLayers, setShpLayers] = useState<any[]>([]);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
+  const [floodGuardLoaded, setFloodGuardLoaded] = useState(false);
+  const [layerVisibility, setLayerVisibility] = useState<{
+    [key: string]: boolean;
+  }>({});
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    processFiles(files);
-  };
+  // Ensure component only renders on client side
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const files = Array.from(e.dataTransfer.files);
-    processFiles(files);
-  };
+  const processShapefileData = useCallback(
+    async (geojson: any, fileName: string) => {
+      return new Promise((resolve) => {
+        try {
+          const layerName = fileName.toLowerCase();
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
+          // Determine layer type for specialized styling
+          let layerConfig: any = {};
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  };
+          if (
+            layerName.includes("daerah_aliran_sungai") ||
+            layerName.includes("wilayah")
+          ) {
+            // Watershed boundaries - blue outline with transparent fill
+            layerConfig = {
+              style: {
+                color: "#0078ff",
+                weight: 2,
+                opacity: 0.8,
+                fillColor: "#0078ff",
+                fillOpacity: 0.1,
+                dashArray: null,
+              },
+            };
+          } else if (
+            layerName.includes("iot") ||
+            layerName.includes("perangkat")
+          ) {
+            // IoT devices - orange circles
+            layerConfig = {
+              style: {
+                color: "#ff7800",
+                weight: 1,
+                opacity: 1,
+                fillColor: "#ff7800",
+                fillOpacity: 0.8,
+              },
+              pointStyle: {
+                radius: 8,
+                fillColor: "#ff7800",
+                color: "#000",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8,
+              },
+            };
+          } else if (
+            layerName.includes("runoff") ||
+            layerName.includes("kelas")
+          ) {
+            // Runoff classification - green with different opacities based on properties
+            layerConfig = {
+              style: (feature: any) => ({
+                color: "#228B22",
+                weight: 2,
+                opacity: 0.8,
+                fillColor: getRunoffColor(feature.properties),
+                fillOpacity: 0.6,
+              }),
+            };
+          } else {
+            // Default styling
+            layerConfig = {
+              style: {
+                color: "#3388ff",
+                weight: 2,
+                opacity: 0.8,
+                fillColor: "#3388ff",
+                fillOpacity: 0.2,
+              },
+            };
+          }
 
-  const processFiles = async (files: File[]) => {
-    if (files.length === 0) return;
+          const geoJsonLayer = L.geoJSON(geojson, {
+            style: (feature) => {
+              // For runoff layers, use dynamic styling
+              if (typeof layerConfig.style === "function") {
+                return layerConfig.style(feature);
+              }
+              return layerConfig.style;
+            },
+            pointToLayer: (feature, latlng) => {
+              if (layerConfig.pointStyle) {
+                return L.circleMarker(latlng, layerConfig.pointStyle);
+              }
+              // Default point marker
+              return L.circleMarker(latlng, {
+                radius: 6,
+                fillColor: "#3388ff",
+                color: "#fff",
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.7,
+              });
+            },
+            onEachFeature: (feature, layer) => {
+              if (feature.properties) {
+                const popupContent = Object.entries(feature.properties)
+                  .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
+                  .join("<br>");
+                layer.bindPopup(popupContent);
+              }
+            },
+          });
 
-    // Validate file types and sizes
-    const invalidFiles = files.filter((file) => {
-      const name = file.name.toLowerCase();
-      const validExtensions = [".tif", ".tiff", ".zip", ".shp"];
-      const hasValidExtension = validExtensions.some((ext) =>
-        name.endsWith(ext)
-      );
-      const isValidSize = file.size <= 100 * 1024 * 1024; // 100MB limit
+          if (mapRef.current) {
+            geoJsonLayer.addTo(mapRef.current);
+            const bounds = geoJsonLayer.getBounds();
 
-      if (!hasValidExtension) {
-        setUploadProgress(`Invalid file type: ${file.name}`);
-        return true;
-      }
-      if (!isValidSize) {
-        setUploadProgress(`File too large (max 100MB): ${file.name}`);
-        return true;
-      }
-      return false;
-    });
+            // Update state with the new layer - prevent duplicates
+            setShpLayers((prevLayers) => {
+              // Check if layer with same name already exists
+              const existingLayer = prevLayers.find(
+                (layer) => layer.id === layerName
+              );
+              if (existingLayer) {
+                return prevLayers;
+              }
 
-    if (invalidFiles.length > 0) {
-      setTimeout(() => setUploadProgress(""), 5000);
-      return;
-    }
+              return [
+                ...prevLayers,
+                {
+                  id: layerName,
+                  layer: geoJsonLayer,
+                  bounds,
+                  type: "shp",
+                  originalName: layerName,
+                  displayName: getDisplayName(layerName),
+                },
+              ];
+            });
 
-    setIsUploading(true);
-    setUploadProgress("Processing files...");
+            // Initialize layer visibility to true only if it's a new layer
+            setLayerVisibility((prev) => {
+              if (prev[layerName] !== undefined) {
+                return prev;
+              }
+              return { ...prev, [layerName]: true };
+            });
 
-    const tiffFiles = files.filter(
-      (file) =>
-        file.name.toLowerCase().endsWith(".tif") ||
-        file.name.toLowerCase().endsWith(".tiff")
-    );
-    const shpFiles = files.filter(
-      (file) =>
-        file.name.toLowerCase().endsWith(".zip") ||
-        file.name.toLowerCase().endsWith(".shp")
-    );
+            if (bounds.isValid() && shpLayers.length === 0) {
+              mapRef.current.fitBounds(bounds);
+            }
+
+            resolve({
+              id: fileName,
+              layer: geoJsonLayer,
+              bounds,
+              type: "shp",
+            });
+          }
+        } catch (error) {
+          console.error("Error processing shapefile data:", error);
+          resolve(null);
+        }
+      });
+    },
+    [shpLayers.length]
+  );
+
+  // Load FloodGuard shapefile on component mount
+  const loadFloodGuardShapefile = useCallback(async () => {
+    if (floodGuardLoaded) return;
 
     try {
-      if (tiffFiles.length > 0) {
-        setUploadProgress(`Processing ${tiffFiles.length} TIFF file(s)...`);
-        await processTiffFiles(tiffFiles);
-      }
-      if (shpFiles.length > 0) {
-        setUploadProgress(`Processing ${shpFiles.length} shapefile(s)...`);
-        await processShpFiles(shpFiles);
-      }
-      setUploadProgress(`✅ ${files.length} file(s) loaded successfully!`);
-      setTimeout(() => setUploadProgress(""), 3000);
-    } catch (error) {
-      console.error("Error processing files:", error);
-      setUploadProgress("❌ Error processing files. Please check file format.");
-      setTimeout(() => setUploadProgress(""), 5000);
-    } finally {
-      setIsUploading(false);
-    }
-  };
+      setIsLoading(true);
+      setUploadProgress("Loading FloodGuard data from Supabase...");
 
-  const processTiffFiles = async (files: File[]) => {
-    const layers = await Promise.all(
-      files.map((file) => {
-        return new Promise(async (resolve) => {
-          const reader = new FileReader();
-          reader.onload = async (e: any) => {
-            const arrayBuffer = e.target.result;
-            try {
-              const raster = await georaster(arrayBuffer);
-              const geoRasterLayer = new GeoRasterLayer({
-                georaster: raster,
-                opacity: 0.7,
-                resolution: 256,
-              });
-
-              // Add layer to map if it exists
-              if (mapRef.current) {
-                geoRasterLayer.addTo(mapRef.current);
-                const bounds = geoRasterLayer.getBounds();
-                resolve({ id: file.name, layer: geoRasterLayer, bounds });
-              }
-            } catch (error) {
-              console.error("Error processing TIFF:", error);
-              setUploadProgress(`❌ Failed to load TIFF: ${file.name}`);
-              resolve(null); // Resolve with null on error
-            }
-          };
-          reader.readAsArrayBuffer(file);
-        });
-      })
-    );
-
-    // Filter out any null layers
-    const validLayers = layers.filter((layer) => layer !== null) as any[];
-
-    // Update state with valid layers
-    setTiffLayers((prevLayers) => [...prevLayers, ...validLayers]);
-
-    if (mapRef.current && validLayers.length > 0) {
-      const boundsList = validLayers.map((layer) => layer.bounds);
-      const combinedBounds = L.latLngBounds(boundsList);
-      mapRef.current.fitBounds(combinedBounds); // Fit to the combined bounds of all layers
-    }
-  };
-
-  const processShpFiles = async (files: File[]) => {
-    const layers = await Promise.all(
-      files.map((file) => {
-        return new Promise(async (resolve) => {
-          try {
-            let arrayBuffer: ArrayBuffer;
-
-            if (file.name.toLowerCase().endsWith(".zip")) {
-              // Handle ZIP files containing shapefile components
-              const reader = new FileReader();
-              reader.onload = async (e: any) => {
-                arrayBuffer = e.target.result;
-                try {
-                  const geojson = await shp(arrayBuffer);
-                  const geoJsonLayer = L.geoJSON(geojson, {
-                    style: (feature) => getShapefileStyle(feature, file.name),
-                    pointToLayer: (feature, latlng) => {
-                      const name = file.name.toLowerCase();
-                      if (name.includes("iot") || name.includes("perangkat")) {
-                        return L.circleMarker(latlng, {
-                          radius: 8,
-                          fillColor: "#ff7800",
-                          color: "#000",
-                          weight: 1,
-                          opacity: 1,
-                          fillOpacity: 0.8,
-                        });
-                      }
-                      // Default point marker
-                      return L.circleMarker(latlng, {
-                        radius: 6,
-                        fillColor: "#3388ff",
-                        color: "#fff",
-                        weight: 2,
-                        opacity: 1,
-                        fillOpacity: 0.7,
-                      });
-                    },
-                    onEachFeature: (feature, layer) => {
-                      if (feature.properties) {
-                        const popupContent = Object.entries(feature.properties)
-                          .map(
-                            ([key, value]) =>
-                              `<strong>${key}:</strong> ${value}`
-                          )
-                          .join("<br>");
-                        layer.bindPopup(popupContent);
-                      }
-                    },
-                  });
-
-                  if (mapRef.current) {
-                    geoJsonLayer.addTo(mapRef.current);
-                    const bounds = geoJsonLayer.getBounds();
-                    resolve({
-                      id: file.name,
-                      layer: geoJsonLayer,
-                      bounds,
-                      type: "shp",
-                    });
-                  }
-                } catch (error) {
-                  console.error("Error processing SHP:", error);
-                  setUploadProgress(
-                    `❌ Failed to load shapefile: ${file.name}`
-                  );
-                  resolve(null);
-                }
-              };
-              reader.readAsArrayBuffer(file);
-            } else {
-              setUploadProgress(
-                "⚠️ Please upload ZIP files containing shapefiles"
-              );
-              resolve(null);
-            }
-          } catch (error) {
-            console.error("Error processing shapefile:", error);
-            resolve(null);
+      // Clear existing layers to prevent duplicates
+      setShpLayers((prevLayers) => {
+        // Remove all existing layers from map
+        prevLayers.forEach((layer) => {
+          if (mapRef.current && layer.layer) {
+            mapRef.current.removeLayer(layer.layer);
           }
         });
-      })
+        return [];
+      });
+      setLayerVisibility({});
+
+      // Use the public URL directly - construct the correct URL
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(
+        "https://",
+        ""
+      );
+      const publicUrl = `https://${supabaseUrl}storage/v1/object/public/floodguard/SHP Pemetaan_FloodGuard.zip`;
+
+      // Download the shapefile from the public URL
+      const response = await fetch(publicUrl);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch shapefile: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+
+      // Convert to GeoJSON using shpjs
+      const geojsonData = await shp(arrayBuffer);
+
+      // Check if geojsonData is an array of layers or a single FeatureCollection
+      if (Array.isArray(geojsonData)) {
+        // Multiple shapefiles in the ZIP
+        setUploadProgress(`Processing ${geojsonData.length} shapefiles...`);
+
+        for (let i = 0; i < geojsonData.length; i++) {
+          const layer = geojsonData[i];
+          // Use the fileName property or create a name based on index
+          const layerName = (layer as any).fileName || `Layer_${i + 1}`;
+          await processShapefileData(layer, layerName);
+        }
+      } else if (geojsonData && typeof geojsonData === "object") {
+        // Check if it's an object with multiple named layers
+        const layerNames = Object.keys(geojsonData as any);
+
+        if (layerNames.length > 1) {
+          setUploadProgress(`Processing ${layerNames.length} shapefiles...`);
+
+          for (const layerName of layerNames) {
+            const layerData = (geojsonData as any)[layerName];
+            if (layerData && layerData.type === "FeatureCollection") {
+              await processShapefileData(layerData, layerName);
+            }
+          }
+        } else {
+          // Single FeatureCollection
+          await processShapefileData(geojsonData, "FloodGuard Data");
+        }
+      }
+
+      setFloodGuardLoaded(true);
+      setUploadProgress("✅ FloodGuard data loaded successfully!");
+      setTimeout(() => setUploadProgress(""), 3000);
+    } catch (error) {
+      console.error("Error loading FloodGuard shapefile:", error);
+      setUploadProgress("❌ Failed to load FloodGuard data from Supabase");
+      setTimeout(() => setUploadProgress(""), 5000);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [floodGuardLoaded, processShapefileData]);
+
+  useEffect(() => {
+    loadFloodGuardShapefile();
+  }, [loadFloodGuardShapefile]);
+
+  const toggleLayerVisibility = (layerId: string) => {
+    setLayerVisibility((prev) => {
+      const newVisibility = { ...prev, [layerId]: !prev[layerId] };
+
+      // Find the layer and toggle its visibility on the map
+      const layer = shpLayers.find((l) => l.id === layerId);
+      if (layer && mapRef.current) {
+        if (newVisibility[layerId]) {
+          // Show layer
+          layer.layer.addTo(mapRef.current);
+        } else {
+          // Hide layer
+          mapRef.current.removeLayer(layer.layer);
+        }
+      }
+
+      return newVisibility;
+    });
+  };
+
+  // Prevent SSR issues by only rendering on client
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading FloodGuard Map...</p>
+        </div>
+      </div>
     );
-
-    // Filter out any null layers
-    const validLayers = layers.filter((layer) => layer !== null) as any[];
-
-    // Update state with valid SHP layers
-    setShpLayers((prevLayers) => [...prevLayers, ...validLayers]);
-
-    if (mapRef.current && validLayers.length > 0) {
-      const boundsList = validLayers.map((layer) => layer.bounds);
-      const combinedBounds = L.latLngBounds(boundsList);
-      mapRef.current.fitBounds(combinedBounds);
-    }
-  };
-
-  // Style function for different shapefile types
-  const getShapefileStyle = (feature: any, filename: string) => {
-    const name = filename.toLowerCase();
-
-    if (name.includes("runoff") || name.includes("kelas")) {
-      // Runoff classification styling
-      return {
-        fillColor: getRunoffColor(feature.properties),
-        weight: 2,
-        opacity: 1,
-        color: "white",
-        dashArray: "3",
-        fillOpacity: 0.7,
-      };
-    } else if (name.includes("iot") || name.includes("perangkat")) {
-      // IoT device styling
-      return {
-        radius: 8,
-        fillColor: "#ff7800",
-        color: "#000",
-        weight: 1,
-        opacity: 1,
-        fillOpacity: 0.8,
-      };
-    } else if (
-      name.includes("das") ||
-      name.includes("wilayah") ||
-      name.includes("watershed")
-    ) {
-      // Watershed boundary styling
-      return {
-        fillColor: "transparent",
-        weight: 3,
-        opacity: 1,
-        color: "#0066cc",
-        dashArray: "5,5",
-        fillOpacity: 0.1,
-      };
-    }
-
-    // Default styling
-    return {
-      fillColor: "#3388ff",
-      weight: 2,
-      opacity: 1,
-      color: "white",
-      dashArray: "3",
-      fillOpacity: 0.5,
-    };
-  };
-
-  // Color function for runoff classification
-  const getRunoffColor = (properties: any) => {
-    // Adjust these based on your actual runoff classification values
-    const value = properties.KELAS || properties.CLASS || properties.VALUE;
-
-    if (!value) return "#cccccc";
-
-    if (typeof value === "string") {
-      const val = value.toLowerCase();
-      if (val.includes("tinggi") || val.includes("high")) return "#d73027";
-      if (val.includes("sedang") || val.includes("medium")) return "#fc8d59";
-      if (val.includes("rendah") || val.includes("low")) return "#91d1c2";
-    } else if (typeof value === "number") {
-      if (value >= 3) return "#d73027";
-      if (value >= 2) return "#fc8d59";
-      if (value >= 1) return "#91d1c2";
-    }
-
-    return "#cccccc";
-  };
-
-  const removeLayer = (id: string) => {
-    // Check both TIFF and SHP layers
-    setTiffLayers((prevLayers) => {
-      const layerToRemove = prevLayers.find((layer) => layer.id === id);
-      if (layerToRemove && mapRef.current) {
-        mapRef.current.removeLayer(layerToRemove.layer);
-      }
-      return prevLayers.filter((layer) => layer.id !== id);
-    });
-
-    setShpLayers((prevLayers) => {
-      const layerToRemove = prevLayers.find((layer) => layer.id === id);
-      if (layerToRemove && mapRef.current) {
-        mapRef.current.removeLayer(layerToRemove.layer);
-      }
-      return prevLayers.filter((layer) => layer.id !== id);
-    });
-  };
+  }
 
   return (
     <div className="relative text-gray-60">
-      {/* File Upload Panel */}
+      {/* FloodGuard Panel */}
       <div
         className="absolute z-50 p-6 bg-white rounded-lg shadow-lg flex flex-col"
         style={{ top: "10px", left: "10px", minWidth: "320px" }}>
@@ -356,40 +372,48 @@ const TiffMap = () => {
           <div className="text-sm h-[20px]"> Back to Dashboard</div>
         </div>
 
-        <h1 className="text-xl font-bold mb-4 text-gray-800">Map Viewer</h1>
+        <h1 className="text-xl font-bold mb-4 text-gray-800">FloodGuard Map</h1>
 
-        {/* Drag and Drop Area */}
-        <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors
-            ${
-              isDragOver
-                ? "border-blue-400 bg-blue-50"
-                : "border-gray-300 hover:border-gray-400"
-            }`}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}>
-          <div className="space-y-3">
-            <div className="text-2xl">📁</div>
-            <div className="text-sm text-gray-600">
-              <strong>Drag & drop files here</strong> or click to browse
-            </div>
-
-            <input
-              type="file"
-              accept=".tiff,.tif,.zip,.shp"
-              onChange={handleFileChange}
-              multiple
-              className="hidden"
-              id="file-upload"
-            />
-
-            <label
-              htmlFor="file-upload"
-              className="inline-block px-4 py-2 bg-blue-500 text-white text-sm rounded cursor-pointer hover:bg-blue-600 transition-colors">
-              Choose Files
-            </label>
+        {/* FloodGuard Status */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">
+              FloodGuard Data
+            </span>
+            <div
+              className={`w-3 h-3 rounded-full ${
+                floodGuardLoaded
+                  ? "bg-green-500"
+                  : isLoading
+                  ? "bg-yellow-500"
+                  : "bg-gray-300"
+              }`}></div>
           </div>
+
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex items-center space-x-2 mb-3">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span className="text-sm text-gray-600">
+                Loading FloodGuard data...
+              </span>
+            </div>
+          )}
+
+          {/* Reload Button */}
+          <button
+            onClick={() => {
+              setFloodGuardLoaded(false);
+              loadFloodGuardShapefile();
+            }}
+            disabled={isLoading}
+            className="w-full px-4 py-2 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
+            {isLoading
+              ? "Loading..."
+              : floodGuardLoaded
+              ? "Reload FloodGuard Data"
+              : "Load FloodGuard Data"}
+          </button>
         </div>
 
         {/* Progress Indicator */}
@@ -404,111 +428,111 @@ const TiffMap = () => {
                 ? "bg-green-50 border border-green-200 text-green-700"
                 : "bg-blue-50 border border-blue-200 text-blue-700"
             }`}>
-            {isUploading && (
-              <span className="inline-block animate-spin">⏳</span>
-            )}
+            {isLoading && <span className="inline-block animate-spin">⏳</span>}
             <span>{uploadProgress}</span>
           </div>
         )}
 
-        {/* File Format Info */}
-        <div className="mt-4 text-xs text-gray-500 bg-gray-50 p-3 rounded">
-          <div className="font-semibold mb-1">Supported formats:</div>
-          <div>
-            • <strong>GeoTIFF:</strong> .tif, .tiff files
-          </div>
-          <div>
-            • <strong>Shapefiles:</strong> .zip files containing .shp, .shx,
-            .dbf, .prj
-          </div>
-        </div>
-      </div>
-      {/* Layers Panel */}
-      <div
-        className="absolute z-50 p-4 bg-white rounded-lg shadow-lg"
-        style={{ top: "10px", right: "10px", minWidth: "280px" }}>
-        <div style={{ maxHeight: "400px", overflowY: "auto" }}>
-          <h2 className="text-lg font-bold mb-3 text-gray-800">Map Layers</h2>
-
-          {/* TIFF Layers Section */}
-          <div className="mb-4">
-            <div className="flex items-center mb-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-              <h3 className="text-sm font-semibold text-gray-700">
-                GeoTIFF Layers
-              </h3>
-              <span className="ml-auto text-xs bg-gray-100 px-2 py-1 rounded">
-                {tiffLayers.length}
-              </span>
+        {/* Layers Panel */}
+        {shpLayers.length > 0 && (
+          <div className="mt-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+            {/* Header */}
+            <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+              <h3 className="text-sm font-semibold text-gray-800">Layers</h3>
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                title="Toggle all layers">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="currentColor">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                </svg>
+              </button>
             </div>
-            {tiffLayers.map((layer) => (
-              <div
-                key={layer.id}
-                className="flex items-center mb-2 p-2 bg-green-50 rounded border-l-3 border-green-500">
-                <div
-                  className="flex-grow text-xs font-mono truncate"
-                  title={layer.id}>
-                  {layer.id}
-                </div>
-                <button
-                  onClick={() => removeLayer(layer.id)}
-                  className="ml-2 px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded transition-colors"
-                  title="Remove layer">
-                  ✕
-                </button>
-              </div>
-            ))}
-            {tiffLayers.length === 0 && (
-              <div className="text-xs text-gray-400 italic pl-5">
-                No TIFF layers loaded
-              </div>
-            )}
-          </div>
 
-          {/* Shapefile Layers Section */}
-          <div className="mb-4">
-            <div className="flex items-center mb-2">
-              <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-              <h3 className="text-sm font-semibold text-gray-700">
-                Shapefile Layers
-              </h3>
-              <span className="ml-auto text-xs bg-gray-100 px-2 py-1 rounded">
-                {shpLayers.length}
-              </span>
-            </div>
-            {shpLayers.map((layer) => (
-              <div
-                key={layer.id}
-                className="flex items-center mb-2 p-2 bg-blue-50 rounded border-l-3 border-blue-500">
-                <div
-                  className="flex-grow text-xs font-mono truncate"
-                  title={layer.id}>
-                  {layer.id}
-                </div>
-                <button
-                  onClick={() => removeLayer(layer.id)}
-                  className="ml-2 px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded transition-colors"
-                  title="Remove layer">
-                  ✕
-                </button>
-              </div>
-            ))}
-            {shpLayers.length === 0 && (
-              <div className="text-xs text-gray-400 italic pl-5">
-                No shapefile layers loaded
-              </div>
-            )}
-          </div>
+            {/* Layer List */}
+            <div className="divide-y divide-gray-200">
+              {shpLayers.map((layer) => {
+                const isVisible = layerVisibility[layer.id] !== false; // default to true
+                const displayName = getDisplayName(layer.id);
+                const featureCount = layer.layer?.getLayers?.()?.length || 0;
 
-          {/* Total layers summary */}
-          {(tiffLayers.length > 0 || shpLayers.length > 0) && (
-            <div className="pt-3 border-t border-gray-200">
-              <div className="text-xs text-gray-600 text-center">
-                Total: {tiffLayers.length + shpLayers.length} layer(s) loaded
+                return (
+                  <div key={layer.id} className="p-3 hover:bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      {/* Layer Name and Info */}
+                      <div className="flex-grow">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-blue-600 hover:text-blue-800 cursor-pointer">
+                            {displayName}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {featureCount > 0
+                            ? `${featureCount} ${
+                                featureCount === 1 ? "feature" : "features"
+                              }`
+                            : layer.id}
+                        </div>
+                      </div>
+
+                      {/* Eye Icon Toggle */}
+                      <button
+                        onClick={() => toggleLayerVisibility(layer.id)}
+                        className={`p-1 rounded hover:bg-gray-200 transition-colors ${
+                          isVisible ? "text-gray-700" : "text-gray-400"
+                        }`}
+                        title={isVisible ? "Hide layer" : "Show layer"}>
+                        {isVisible ? (
+                          // Eye open icon
+                          <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                          </svg>
+                        ) : (
+                          // Eye closed icon
+                          <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Layer Legend */}
+        {shpLayers.length > 0 && (
+          <div className="mt-4 p-3 bg-gray-50 rounded">
+            <div className="text-sm font-medium mb-2 text-gray-700">Legend</div>
+            <div className="space-y-1 text-xs">
+              <div className="flex items-center">
+                <div className="w-3 h-3 bg-blue-600 rounded mr-2"></div>
+                <span>Watershed Boundary</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-3 h-3 bg-orange-600 rounded-full mr-2"></div>
+                <span>IoT Devices</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-3 h-3 bg-green-500 mr-2"></div>
+                <span>Runoff Classification</span>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Map */}
@@ -534,4 +558,4 @@ const TiffMap = () => {
   );
 };
 
-export default TiffMap;
+export default FloodGuardMap;

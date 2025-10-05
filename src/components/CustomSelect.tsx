@@ -26,8 +26,6 @@ const CustomSelect = ({
   placeholder,
   error,
 }: CustomSelectProps) => {
-  console.log("value", value);
-
   return (
     <Select
       options={options}

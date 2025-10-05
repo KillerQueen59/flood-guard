@@ -189,10 +189,6 @@ export const useAwsImpl = () => {
     return new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime();
   });
 
-  console.log("Filtered and sorted AWS data:", sortedAws);
-  console.log("Selected date:", dayjs(selectedDate).format("YYYY-MM-DD"));
-  console.log("Applied filters:", { pt, kebun, device });
-
   return {
     pt: pt || "All",
     aws: sortedAws,

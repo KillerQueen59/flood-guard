@@ -2,25 +2,19 @@
 
 import dynamic from "next/dynamic";
 
-// Dynamically import the Map component with SSR disabled
-const MapPicker = dynamic(() => import("@/components/Map"), {
+// Dynamically import the FloodGuardMap component with SSR disabled
+const FloodGuardMap = dynamic(() => import("../../../components/Map/FloodGuardMap"), {
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center h-screen">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading Map...</p>
+        <p className="mt-4 text-gray-600">Loading FloodGuard Map...</p>
       </div>
     </div>
   ),
 });
 
-const MapPage = () => {
-  return (
-    <div>
-      <MapPicker />
-    </div>
-  );
-};
-
-export default MapPage;
+export default function FloodGuardMapPage() {
+  return <FloodGuardMap />;
+}

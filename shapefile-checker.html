@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FloodGuard Shapefile Checker</title>
+    <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #005a87;
+        }
+        .error {
+            color: #d73027;
+            background: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            color: #2e7d32;
+            background: #e8f5e8;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        #info {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>FloodGuard Shapefile Checker</h1>
+    
+    <div class="container">
+        <h3>Check Your Supabase Shapefile</h3>
+        <p>This tool will download and analyze your shapefile from Supabase Storage.</p>
+        
+        <button class="button" onclick="checkShapefile()">Check FloodGuard Shapefile</button>
+        <button class="button" onclick="downloadFile()">Download ZIP File</button>
+    </div>
+
+    <div id="status"></div>
+    <div id="info"></div>
+
+    <script>
+        const SHAPEFILE_URL = 'https://nvljfjrwxjcmoceouxym.supabase.co/storage/v1/object/public/floodguard/shp_flood_guard.zip';
+
+        function setStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = type;
+            statusDiv.innerHTML = message;
+        }
+
+        function setInfo(content) {
+            document.getElementById('info').textContent = content;
+        }
+
+        async function checkShapefile() {
+            try {
+                setStatus('⏳ Downloading shapefile from Supabase...', 'info');
+                setInfo('');
+
+                // Download the file
+                const response = await fetch(SHAPEFILE_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                setStatus('⏳ Converting shapefile to GeoJSON...', 'info');
+                
+                // Convert to array buffer
+                const arrayBuffer = await response.arrayBuffer();
+                
+                // Parse with shpjs
+                const geojson = await shp(arrayBuffer);
+                
+                setStatus('✅ Shapefile loaded successfully!', 'success');
+                
+                // Display information
+                let info = 'SHAPEFILE ANALYSIS RESULTS:\n\n';
+                
+                if (Array.isArray(geojson)) {
+                    info += `Number of layers: ${geojson.length}\n\n`;
+                    geojson.forEach((layer, index) => {
+                        info += `=== LAYER ${index + 1} ===\n`;
+                        info += `Type: ${layer.type}\n`;
+                        info += `Features: ${layer.features?.length || 0}\n`;
+                        
+                        if (layer.features && layer.features.length > 0) {
+                            const firstFeature = layer.features[0];
+                            info += `Geometry Type: ${firstFeature.geometry?.type}\n`;
+                            
+                            if (firstFeature.properties) {
+                                info += `Properties: ${Object.keys(firstFeature.properties).join(', ')}\n`;
+                                info += `Sample Properties:\n`;
+                                Object.entries(firstFeature.properties).slice(0, 5).forEach(([key, value]) => {
+                                    info += `  ${key}: ${value}\n`;
+                                });
+                            }
+                        }
+                        info += '\n';
+                    });
+                } else {
+                    info += `Type: ${geojson.type}\n`;
+                    info += `Features: ${geojson.features?.length || 0}\n`;
+                    
+                    if (geojson.features && geojson.features.length > 0) {
+                        const firstFeature = geojson.features[0];
+                        info += `Geometry Type: ${firstFeature.geometry?.type}\n`;
+                        
+                        if (firstFeature.properties) {
+                            info += `Properties: ${Object.keys(firstFeature.properties).join(', ')}\n`;
+                            info += `Sample Properties:\n`;
+                            Object.entries(firstFeature.properties).slice(0, 5).forEach(([key, value]) => {
+                                info += `  ${key}: ${value}\n`;
+                            });
+                        }
+                    }
+                }
+                
+                setInfo(info);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                setStatus(`❌ Error: ${error.message}`, 'error');
+                setInfo('');
+            }
+        }
+
+        function downloadFile() {
+            const a = document.createElement('a');
+            a.href = SHAPEFILE_URL;
+            a.download = 'shp_flood_guard.zip';
+            a.click();
+        }
+    </script>
+</body>
+</html>

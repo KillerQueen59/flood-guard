@@ -131,8 +131,6 @@ export const useAwlImpl = () => {
     }
 
     setAWL(filteredData);
-    console.log("Filtered AWL data:", filteredData);
-    console.log("Applied filters:", { pt, kebun, status, region });
   }, [pt, kebun, status, region, allAwl]);
 
   useEffect(() => {

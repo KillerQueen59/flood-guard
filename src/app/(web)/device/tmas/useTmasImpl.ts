@@ -139,10 +139,6 @@ export const useTmasImpl = () => {
     return new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime();
   });
 
-  console.log("Filtered and sorted TMAS data:", sortedTmas);
-  console.log("Selected date:", dayjs(selectedDate).format("YYYY-MM-DD"));
-  console.log("Applied filters:", { pt, kebun, device });
-
   // Filter devices based on selected kebun
   const filteredDevices = devices.filter((dev: any) => {
     if (!kebun) return true; // Show all if no kebun selected
