@@ -33,7 +33,7 @@ function SideBar() {
       } h-screen flex flex-col bg-white overflow-auto transition-width duration-300 easy border-r border-gray-20`}>
       <div className="px-9 flex bg-white items-center space-x-1.5 py-8 sticky top-0">
         <Image
-          src={"/flood_guard_logo.svg"}
+          src={isOpen ? "/flood_guard_logo_full.svg" : "/flood_guard_logo.svg"}
           alt="Mamen Logo"
           width={isOpen ? 140 : 40}
           height={isOpen ? 85 : 25}

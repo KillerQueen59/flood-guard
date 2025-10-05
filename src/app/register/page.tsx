@@ -44,7 +44,7 @@ export default function Register() {
       <ToastContainer />
       <div className="flex space-x-1.5 mb-12 w-fit mx-auto">
         <Image
-          src="/flood_guard_logo.svg"
+          src="/flood_guard_logo_full.svg"
           alt="Flood Guard Logo"
           width={135}
           height={84}
