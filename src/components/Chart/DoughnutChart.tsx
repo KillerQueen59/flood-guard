@@ -49,17 +49,28 @@ function DoughnutChart({
   onLaporanHarianClicked,
   onLaporanBulananClicked,
 }: DoughnutChartProps) {
-  const total = data.reduce(
+  // Sort data by specific order: Active, Idle, Alert, Rusak
+  const sortedData = [...data].sort((a, b) => {
+    const order = ["Active", "Idle", "Alert", "Rusak"];
+    const indexA = order.indexOf(a.label);
+    const indexB = order.indexOf(b.label);
+
+    // If label not found in order array, put it at the end
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+
+    return indexA - indexB;
+  });
+
+  const total = sortedData.reduce(
     (a: any, b: any) => parseInt(a) + parseInt(b.value),
     0
   );
 
-  data.sort((a: any, b: any) => b.value - a.value);
-
   const datas = {
     datasets: [
       {
-        data: data,
+        data: sortedData,
         backgroundColor: transformColor(backgroundColor),
         borderWidth: 0,
         hoverBorderColor: transformColor(backgroundColor),
@@ -147,7 +158,7 @@ function DoughnutChart({
                   callbacks: {
                     label: (context: any) => {
                       return `${
-                        data[context.dataIndex].label
+                        sortedData[context.dataIndex].label
                       }: ${numberWithSeparator(context.raw.value)}`;
                     },
                   },
@@ -173,7 +184,7 @@ function DoughnutChart({
           )}
           {row ? (
             <div className="grid grid-rows-2 gap-4 mt-2 cursor-pointer">
-              {data.map((d, i) => (
+              {sortedData.map((d, i) => (
                 <div
                   key={i}
                   className={clsx("w-full bg-opacity-0", {
@@ -207,7 +218,7 @@ function DoughnutChart({
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4 mt-2">
-              {data.map((d, i) => {
+              {sortedData.map((d, i) => {
                 return (
                   <div
                     key={i}

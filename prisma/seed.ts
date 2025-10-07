@@ -15,6 +15,8 @@ interface DeviceConfig {
   signal: number;
   sensorOrData: number;
   startDate: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface PTData {
@@ -33,6 +35,23 @@ const randomBetween = (min: number, max: number): number =>
   min + Math.random() * (max - min);
 const randomInt = (min: number, max: number): number =>
   Math.floor(randomBetween(min, max + 1));
+
+// Coordinate data from dummy markers (4 AWS + 6 AWL)
+const awsCoordinates = [
+  { latitude: -5.429851850082087, longitude: 105.29543396620493 },
+  { latitude: -5.36937823206494, longitude: 105.24370880870089 },
+  { latitude: -5.43656879134703, longitude: 105.20507955640683 },
+  { latitude: -5.509417246618921, longitude: 105.35336981304408 },
+];
+
+const awlCoordinates = [
+  { latitude: -5.429080603999929, longitude: 105.29203937700005 },
+  { latitude: -5.441714725999895, longitude: 105.20765084200004 },
+  { latitude: -5.358188552999921, longitude: 105.23212811500008 },
+  { latitude: -5.447602394999876, longitude: 105.31379439400008 },
+  { latitude: -5.47647021200001, longitude: 105.32362851600001 },
+  { latitude: -5.476406690999988, longitude: 105.22393059700002 },
+];
 
 // Helper function to generate DateTime for September 25, 2025 with specific hour
 const getTargetDateTime = (hour: number): Date => {
@@ -85,16 +104,36 @@ async function main() {
     });
   }
 
-  // Generate device configurations for each kebun (8 devices per kebun)
+  // Generate device configurations to match dummy data (4 AWS + 6 AWL = 10 total devices)
   const deviceConfigs: DeviceConfig[] = [];
   const statusOptions: DeviceStatus[] = ["active", "alert", "rusak", "idle"];
 
-  for (let kebunId = 1; kebunId <= 4; kebunId++) {
-    const ptId = kebunId <= 2 ? "1" : "2";
+  // Define specific device configurations to match dummy data
+  const deviceDistribution = [
+    // PT 1, Kebun 1: 2 AWS, 2 AWL
+    { ptId: "1", kebunId: "1", awsCount: 2, awlCount: 2 },
+    // PT 1, Kebun 2: 1 AWS, 2 AWL
+    { ptId: "1", kebunId: "2", awsCount: 1, awlCount: 2 },
+    // PT 2, Kebun 3: 1 AWS, 1 AWL
+    { ptId: "2", kebunId: "3", awsCount: 1, awlCount: 1 },
+    // PT 2, Kebun 4: 0 AWS, 1 AWL
+    { ptId: "2", kebunId: "4", awsCount: 0, awlCount: 1 },
+  ];
 
-    for (let deviceNum = 1; deviceNum <= 8; deviceNum++) {
-      const isAWS = Math.random() > 0.5; // 50% chance for AWS vs AWL
-      const status: DeviceStatus = statusOptions[randomInt(0, 3)];
+  let deviceNum = 1;
+  let awsIndex = 0;
+  let awlIndex = 0;
+
+  for (const dist of deviceDistribution) {
+    // Create AWS devices for this kebun
+    for (let i = 0; i < dist.awsCount; i++) {
+      // Ensure at least 50% of AWS devices are active for weather data generation
+      const status: DeviceStatus =
+        awsIndex < 2 ? "active" : statusOptions[randomInt(0, 3)];
+      const coordinates = awsCoordinates[awsIndex] || {
+        latitude: 0,
+        longitude: 0,
+      };
 
       // Adjust device stats based on status
       let battery: number, signal: number, sensorOrData: number;
@@ -103,17 +142,17 @@ async function main() {
         case "active":
           battery = randomInt(70, 100);
           signal = randomInt(80, 100);
-          sensorOrData = isAWS ? randomInt(7, 8) : randomInt(150, 300);
+          sensorOrData = randomInt(7, 8); // AWS sensor count
           break;
         case "alert":
           battery = randomInt(20, 69);
           signal = randomInt(50, 79);
-          sensorOrData = isAWS ? randomInt(5, 7) : randomInt(50, 149);
+          sensorOrData = randomInt(5, 7); // AWS sensor count
           break;
         case "rusak":
           battery = randomInt(0, 19);
           signal = randomInt(0, 49);
-          sensorOrData = isAWS ? randomInt(0, 4) : randomInt(0, 49);
+          sensorOrData = randomInt(0, 4); // AWS sensor count
           break;
         case "idle":
           battery = 0;
@@ -123,16 +162,75 @@ async function main() {
       }
 
       deviceConfigs.push({
-        kebunId: kebunId.toString(),
-        ptId,
+        kebunId: dist.kebunId,
+        ptId: dist.ptId,
         deviceNum,
-        isAWS,
+        isAWS: true,
         status,
         battery,
         signal,
         sensorOrData,
-        startDate: getTargetDateTime(0).toISOString().split("T")[0], // Still keep date string for device start date
+        startDate: getTargetDateTime(0).toISOString().split("T")[0],
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
       });
+
+      deviceNum++;
+      awsIndex++;
+    }
+
+    // Create AWL devices for this kebun
+    for (let i = 0; i < dist.awlCount; i++) {
+      // Ensure at least 50% of AWL devices are active for TMAS data generation
+      const status: DeviceStatus =
+        awlIndex < 3 ? "active" : statusOptions[randomInt(0, 3)];
+      const coordinates = awlCoordinates[awlIndex] || {
+        latitude: 0,
+        longitude: 0,
+      };
+
+      // Adjust device stats based on status
+      let battery: number, signal: number, sensorOrData: number;
+
+      switch (status) {
+        case "active":
+          battery = randomInt(70, 100);
+          signal = randomInt(80, 100);
+          sensorOrData = randomInt(150, 300); // AWL data count
+          break;
+        case "alert":
+          battery = randomInt(20, 69);
+          signal = randomInt(50, 79);
+          sensorOrData = randomInt(50, 149); // AWL data count
+          break;
+        case "rusak":
+          battery = randomInt(0, 19);
+          signal = randomInt(0, 49);
+          sensorOrData = randomInt(0, 49); // AWL data count
+          break;
+        case "idle":
+          battery = 0;
+          signal = 0;
+          sensorOrData = 0;
+          break;
+      }
+
+      deviceConfigs.push({
+        kebunId: dist.kebunId,
+        ptId: dist.ptId,
+        deviceNum,
+        isAWS: false,
+        status,
+        battery,
+        signal,
+        sensorOrData,
+        startDate: getTargetDateTime(0).toISOString().split("T")[0],
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+      });
+
+      deviceNum++;
+      awlIndex++;
     }
   }
 
@@ -309,7 +407,22 @@ async function main() {
   // Create WeatherData records for September 25, 2025 (hourly data for each AWS device)
   console.log("Seeding WeatherData...");
 
-  const weatherDataRecords: any[] = [];
+  const weatherDataRecords: Array<{
+    tanggal: Date;
+    year: number;
+    suhuRataRata: number;
+    ch: number;
+    kelembabanRelatif: number;
+    tekananUdara: number;
+    windSpeed: number;
+    windDirec: number;
+    suhuMinimal: number;
+    suhuMaksimal: number;
+    evapotranspirasi: number;
+    radiasiSolarPanel: number;
+    kebunId: string;
+    awsId: string;
+  }> = [];
 
   // Generate data for each AWS device that is active
   const activeAWSDevices = createdAWSDevices.filter(
@@ -360,7 +473,12 @@ async function main() {
   // Create TMASData records for September 25, 2025 (hourly data for each AWL device)
   console.log("Seeding TMASData...");
 
-  const tmasDataRecords: any[] = [];
+  const tmasDataRecords: Array<{
+    tanggal: Date;
+    ketinggian: number;
+    kebunId: string;
+    awlId: string;
+  }> = [];
 
   // Generate data for each AWL device that is active
   const activeAWLDevices = createdAWLDevices.filter(
@@ -372,7 +490,7 @@ async function main() {
 
   for (const awlDevice of activeAWLDevices) {
     // Base water level for this specific device (0-120 cm range, convert to meters)
-    let baseLevel = randomBetween(0.3, 0.9); // 30-90 cm base level
+    const baseLevel = randomBetween(0.3, 0.9); // 30-90 cm base level
 
     for (let hour = 0; hour < 24; hour++) {
       // Water level varies throughout the day with realistic patterns
@@ -430,7 +548,7 @@ async function main() {
   // Status distribution
   const allDevices = [...createdAWSDevices, ...createdAWLDevices];
   const statusDist = allDevices.reduce(
-    (acc: Record<string, number>, device: any) => {
+    (acc: Record<string, number>, device: { status: string }) => {
       acc[device.status] = (acc[device.status] || 0) + 1;
       return acc;
     },
