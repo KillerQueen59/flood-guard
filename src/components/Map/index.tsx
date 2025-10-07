@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
 
 // Create a simpler dynamic import
-const FloodGuardMapComponent = dynamic(() => import("./FloodGuardMap"), {
+const FloodGuardMapComponent = dynamic(() => import("./Map"), {
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center h-screen">
