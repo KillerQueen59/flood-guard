@@ -15,8 +15,8 @@ export default function Dashboard() {
     pts,
     kebun,
     kebuns,
-    awlDashboard, // <- Note: changed from 'dashboard' to 'awlDashboard'
-    awsDashboard, // <- Note: changed from 'dashboard' to 'awsDashboard'
+    awlDashboard,
+    awsDashboard,
     showModal,
     loading,
     setShowModal,
@@ -26,12 +26,6 @@ export default function Dashboard() {
 
   return (
     <div className="m-4">
-      {/* Header with user info and logout */}
-      {/* <div className="flex justify-between items-center mb-4 p-4 bg-white rounded-lg shadow">
-        <UserInfo />
-        <LogoutButton />
-      </div> */}
-
       <div className="py-8 px-4 space-x-4 flex h-[112px]">
         <CustomSelectField
           options={pts}
@@ -98,7 +92,7 @@ export default function Dashboard() {
           ) : (
             <DoughnutChart
               title="AWS"
-              data={awsDashboard} // <- Using AWS-specific data
+              data={awsDashboard}
               below
               noLine
               className="h-full"
