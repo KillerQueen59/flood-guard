@@ -8,8 +8,9 @@ export const dummyIotMarker = {
         coordinates: [105.29543396620493, -5.429851850082087],
       },
       properties: {
-        Id: 0,
+        Id: 1,
         IoT: "Automatic Rainfall Recorder",
+        status: "active",
       },
     },
     {
@@ -19,8 +20,9 @@ export const dummyIotMarker = {
         coordinates: [105.24370880870089, -5.36937823206494],
       },
       properties: {
-        Id: 0,
+        Id: 2,
         IoT: "Automatic Rainfall Recorder",
+        status: "active",
       },
     },
     {
@@ -30,8 +32,9 @@ export const dummyIotMarker = {
         coordinates: [105.20507955640683, -5.43656879134703],
       },
       properties: {
-        Id: 0,
+        Id: 3,
         IoT: "Automatic Rainfall Recorder",
+        status: "rusak",
       },
     },
     {
@@ -41,8 +44,9 @@ export const dummyIotMarker = {
         coordinates: [105.35336981304408, -5.509417246618921],
       },
       properties: {
-        Id: 0,
+        Id: 4,
         IoT: "Automatic Rainfall Recorder",
+        status: "active",
       },
     },
     {
@@ -52,8 +56,9 @@ export const dummyIotMarker = {
         coordinates: [105.29203937700005, -5.429080603999929],
       },
       properties: {
-        Id: 0,
+        Id: 1,
         IoT: "Automatic Water Level",
+        status: "active",
       },
     },
     {
@@ -63,8 +68,9 @@ export const dummyIotMarker = {
         coordinates: [105.20765084200004, -5.441714725999895],
       },
       properties: {
-        Id: 0,
+        Id: 2,
         IoT: "Automatic Water Level",
+        status: "active",
       },
     },
     {
@@ -76,6 +82,7 @@ export const dummyIotMarker = {
       properties: {
         Id: 0,
         IoT: "Automatic Water Level",
+        status: "active",
       },
     },
     {
@@ -87,6 +94,7 @@ export const dummyIotMarker = {
       properties: {
         Id: 0,
         IoT: "Automatic Water Level",
+        status: "idle",
       },
     },
     {
@@ -98,6 +106,7 @@ export const dummyIotMarker = {
       properties: {
         Id: 0,
         IoT: "Automatic Water Level",
+        status: "alert",
       },
     },
     {
@@ -109,6 +118,7 @@ export const dummyIotMarker = {
       properties: {
         Id: 0,
         IoT: "Automatic Water Level",
+        status: "active",
       },
     },
   ],

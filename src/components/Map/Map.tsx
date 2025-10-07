@@ -868,17 +868,25 @@ const IoTMarkers = ({ data }: any) => {
                   <div className="flex items-center justify-center pt-2">
                     <div
                       className={`text-xs flex items-center space-x-1 ${
-                        iotType === "Automatic Rainfall Recorder"
-                          ? "text-blue-600"
-                          : "text-red-600"
+                        feature.properties.status === "active"
+                          ? "text-green-600"
+                          : feature.properties.status === "alert"
+                          ? "text-yellow-600"
+                          : feature.properties.status === "rusak"
+                          ? "text-red-600"
+                          : "text-gray-600"
                       }`}>
                       <div
                         className={`w-2 h-2 rounded-full ${
-                          iotType === "Automatic Rainfall Recorder"
-                            ? "bg-blue-500"
-                            : "bg-red-500"
+                          feature.properties.status === "active"
+                            ? "bg-green-500"
+                            : feature.properties.status === "alert"
+                            ? "bg-yellow-500"
+                            : feature.properties.status === "rusak"
+                            ? "bg-red-500"
+                            : "bg-gray-500"
                         }`}></div>
-                      <span>Active</span>
+                      <span>{feature.properties.status}</span>
                     </div>
                   </div>
                 </div>

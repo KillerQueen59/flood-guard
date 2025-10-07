@@ -104,7 +104,7 @@ export const useTmasImpl = () => {
     getTmasData();
     getKebunData();
     getDeviceData();
-  }, []);
+  }, [getPTData, getTmasData, getKebunData, getDeviceData]);
 
   // Apply filters to TMAS data
   const filteredTmas = tmas.filter((data: any) => {
@@ -134,10 +134,61 @@ export const useTmasImpl = () => {
     return true;
   });
 
+  // Group data by hour and calculate averages for duplicates
+  const groupedByHour = filteredTmas.reduce((acc: any, data: any) => {
+    const hour = dayjs(data.tanggal).format("HH:mm");
+
+    if (!acc[hour]) {
+      acc[hour] = {
+        items: [],
+        count: 0,
+      };
+    }
+
+    acc[hour].items.push(data);
+    acc[hour].count++;
+
+    return acc;
+  }, {});
+
+  console.log("Grouped TMAS by hour:", groupedByHour);
+
+  // Calculate averages for each hour
+  const aggregatedTmas = Object.keys(groupedByHour).map((hour) => {
+    const group = groupedByHour[hour];
+    const items = group.items;
+
+    // If only one item, return it as is
+    if (items.length === 1) {
+      return items[0];
+    }
+
+    // Log when we're averaging duplicate hours
+    console.log(`Averaging ${items.length} TMAS entries for hour ${hour}`);
+
+    // Calculate averages for ketinggian (water level height)
+    const averagedData = {
+      ...items[0], // Use the first item as base, keeping non-numeric fields
+      ketinggian:
+        items.reduce(
+          (sum: number, item: any) => sum + (item.ketinggian || 0),
+          0
+        ) / items.length,
+      // Set timestamp to the earliest time for this hour
+      tanggal: items[0].tanggal,
+    };
+
+    return averagedData;
+  });
+
   // Sort by datetime for better visualization
-  const sortedTmas = filteredTmas.sort((a: any, b: any) => {
+  const sortedTmas = aggregatedTmas.sort((a: any, b: any) => {
     return new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime();
   });
+
+  console.log("Filtered and sorted TMAS data:", sortedTmas);
+  console.log("Selected date:", dayjs(selectedDate).format("YYYY-MM-DD"));
+  console.log("Applied filters:", { pt, kebun, device });
 
   // Filter devices based on selected kebun
   const filteredDevices = devices.filter((dev: any) => {

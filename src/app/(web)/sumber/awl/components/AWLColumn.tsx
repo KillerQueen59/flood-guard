@@ -52,7 +52,7 @@ const AWLColumn = () => {
           </div>
         ),
         minSize: Math.round((global?.window && window.innerHeight - 55) * 0.2),
-        cell: (info) => <div>{date(info.row.original.startDate ?? "")}</div>,
+        cell: (info) => <div>{date(info.row.original.startDate)}</div>,
       },
       {
         accessorKey: "battery",
