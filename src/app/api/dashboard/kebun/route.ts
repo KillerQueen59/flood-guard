@@ -1,43 +1,33 @@
-// app/api/dashboard/kebun/route.ts
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
+import { loadLookupMaps, makeError } from "@/app/api/_lib";
 
-const prisma = new PrismaClient();
+export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const kebuns = await prisma.kebun.findMany({
-      include: {
-        pt: true, // Include PT relationship for filtering
-      },
-      orderBy: {
-        name: "asc",
-      },
-    });
+    const ptName = request.nextUrl.searchParams.get("pt")?.trim();
+    const { kebunById, ptById } = await loadLookupMaps();
 
-    const formattedKebuns = kebuns.map((kebun) => ({
-      id: kebun.id,
-      name: kebun.name,
-      ptId: kebun.ptId,
-      pt: kebun.pt,
-    }));
+    const rows = Object.values(kebunById)
+      .map((kebun) => {
+        const pt = ptById[kebun.ptId];
+        return {
+          id: kebun.id,
+          name: kebun.name,
+          ptId: kebun.ptId,
+          pt: {
+            id: pt?.id || "",
+            name: pt?.name || "",
+          },
+        };
+      })
+      .filter((item) => (ptName ? item.pt.name === ptName : true))
+      .sort((a, b) => a.name.localeCompare(b.name));
 
-    return NextResponse.json({
-      success: true,
-      data: formattedKebuns,
-      message: `Found ${formattedKebuns.length} kebuns`,
-    });
+    return NextResponse.json({ data: rows });
   } catch (error) {
-    console.error("Error fetching kebun data:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch kebun data",
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
+    return makeError(
+      error instanceof Error ? error.message : "Failed to fetch Kebun data",
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

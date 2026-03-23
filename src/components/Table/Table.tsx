@@ -3,6 +3,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import "./index.css";
+import LoadingState from "@/components/State/LoadingState";
+import EmptyState from "@/components/State/EmptyState";
 
 import {
   ColumnDef,
@@ -22,6 +24,9 @@ export default function Table({
   columns,
   isSearchActive = false,
   isFilterYearsActive = false,
+  isLoading = false,
+  emptyTitle,
+  emptyDescription,
 }: {
   data: any;
   columns: ColumnDef<any>[];
@@ -31,6 +36,8 @@ export default function Table({
   pageIndex: number;
   setPageIndex: React.Dispatch<React.SetStateAction<number>>;
   isLoading?: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }) {
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -73,11 +80,12 @@ export default function Table({
   return (
     <div>
       <div className="h-4" />
-      {false ? (
-        <div className="w-full flex items-center justify-center p-8">
-          {/* <Loading /> */}
-          load data
-        </div>
+      {isLoading ? (
+        <LoadingState
+          title="Loading table data"
+          description="We are preparing your records."
+          className="min-h-[280px]"
+        />
       ) : (
         <div className="relative">
           <table className="w-full ">
@@ -101,7 +109,7 @@ export default function Table({
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                       </th>
                     );
@@ -115,16 +123,17 @@ export default function Table({
                   <td
                     colSpan={columns.length}
                     style={{
-                      padding: "36px 24px",
+                      padding: "24px",
                       textAlign: "center",
                     }}>
-                    <div className="text-lg text-gray-80 font-semibold">
-                      Data Not Entered Yet
-                    </div>
-                    <div className="text-sm text-gray-60">
-                      You havent entered data for this menu yet. Please add data
-                      first to complete the available table.
-                    </div>
+                    <EmptyState
+                      title={emptyTitle || "No rows available"}
+                      description={
+                        emptyDescription ||
+                        "No records match your current filter selection."
+                      }
+                      className="min-h-[220px]"
+                    />
                   </td>
                 </tr>
               </tbody>
@@ -143,7 +152,7 @@ export default function Table({
                             }}>
                             {flexRender(
                               cell.column.columnDef.cell,
-                              cell.getContext()
+                              cell.getContext(),
                             )}
                           </td>
                         );

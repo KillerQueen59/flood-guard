@@ -1,87 +1,116 @@
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  fetchFromSupabaseRest,
+  loadLookupMaps,
+  makeError,
+} from "@/app/api/_lib";
 
-const prisma = new PrismaClient();
+export const runtime = "nodejs";
 
-export async function GET(request: Request) {
+type TmasRow = {
+  id: number;
+  tanggal: string;
+  ketinggian: number;
+  kebunId: string;
+  awlId: string;
+  createdAt: string;
+};
+
+const getDateRange = (date?: string | null) => {
+  if (!date) return null;
+  const start = new Date(`${date}T00:00:00.000Z`);
+  if (Number.isNaN(start.getTime())) return null;
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 1);
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+  };
+};
+
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const pt = searchParams.get("pt");
-    const kebun = searchParams.get("kebun");
-    const device = searchParams.get("device");
-    const date = searchParams.get("date");
+    const pt = request.nextUrl.searchParams.get("pt")?.trim();
+    const kebun = request.nextUrl.searchParams.get("kebun")?.trim();
+    const device = request.nextUrl.searchParams.get("device")?.trim();
+    const date = request.nextUrl.searchParams.get("date")?.trim();
 
-    // Build the where clause based on filters
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const whereClause: any = {};
+    const dateRange = getDateRange(date);
 
-    // Date filter - if provided, filter by specific date
-    if (date) {
-      const startDate = new Date(date);
-      const endDate = new Date(date);
-      endDate.setDate(endDate.getDate() + 1);
+    const tmasBaseQuery =
+      "TMASData?select=id,tanggal,ketinggian,kebunId,awlId,createdAt&order=tanggal.asc";
 
-      whereClause.tanggal = {
-        gte: startDate,
-        lt: endDate,
-      };
-    }
+    const tmasQuery = dateRange
+      ? `${tmasBaseQuery}&tanggal=gte.${encodeURIComponent(
+          dateRange.start,
+        )}&tanggal=lt.${encodeURIComponent(dateRange.end)}`
+      : tmasBaseQuery;
 
-    // PT filter
-    if (pt && pt !== "All") {
-      whereClause.kebun = {
-        pt: {
-          name: pt,
-        },
-      };
-    }
+    const [lookups, awlRows, tmasRows] = await Promise.all([
+      loadLookupMaps(),
+      fetchFromSupabaseRest<
+        Array<{
+          id: string;
+          name: string;
+          detailName: string;
+          startDate: string;
+          battery: number;
+          signal: number;
+          data: number;
+          status: string;
+          note: string;
+          ptId: string;
+          kebunId: string;
+        }>
+      >(
+        "AlatAWL?select=id,name,detailName,startDate,battery,signal,data,status,note,ptId,kebunId",
+      ),
+      fetchFromSupabaseRest<TmasRow[]>(tmasQuery),
+    ]);
 
-    // Kebun filter
-    if (kebun && kebun !== "All") {
-      whereClause.kebun = {
-        ...whereClause.kebun,
-        name: kebun,
-      };
-    }
+    const awlById = (awlRows || []).reduce<
+      Record<string, (typeof awlRows)[number]>
+    >((acc, row) => {
+      acc[row.id] = row;
+      return acc;
+    }, {});
 
-    // Device filter
-    if (device && device !== "All") {
-      whereClause.alatAWL = {
-        name: device,
-      };
-    }
+    const data = (tmasRows || [])
+      .map((row) => {
+        const kebunRow = lookups.kebunById[row.kebunId];
+        const awlRow = awlById[row.awlId];
+        const ptRow =
+          (kebunRow && lookups.ptById[kebunRow.ptId]) ||
+          (awlRow && lookups.ptById[awlRow.ptId]);
 
-    const tmasData = await prisma.tMASData.findMany({
-      where: whereClause,
-      include: {
-        kebun: {
-          include: {
-            pt: true,
+        return {
+          ...row,
+          kebun: {
+            id: kebunRow?.id || "",
+            name: kebunRow?.name || "",
+            pt: {
+              id: ptRow?.id || "",
+              name: ptRow?.name || "",
+            },
           },
-        },
-        alatAWL: true,
-      },
-      orderBy: {
-        tanggal: "asc",
-      },
-    });
+          alatAWL: awlRow
+            ? {
+                id: awlRow.id,
+                name: awlRow.name,
+                detailName: awlRow.detailName,
+                status: awlRow.status,
+              }
+            : null,
+        };
+      })
+      .filter((item) => (pt ? item.kebun.pt.name === pt : true))
+      .filter((item) => (kebun ? item.kebun.name === kebun : true))
+      .filter((item) => (device ? item.alatAWL?.name === device : true));
 
-    return NextResponse.json({
-      success: true,
-      data: tmasData,
-      message: `Found ${tmasData.length} TMAS records`,
-    });
+    return NextResponse.json({ data });
   } catch (error) {
-    console.error("Error fetching TMAS data:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch TMAS data",
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
+    return makeError(
+      error instanceof Error ? error.message : "Failed to fetch TMAS report",
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

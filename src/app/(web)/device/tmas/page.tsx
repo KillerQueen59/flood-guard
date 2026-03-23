@@ -6,6 +6,8 @@ import CustomSelect from "@/components/CustomSelect";
 import Image from "next/image";
 import dayjs from "dayjs";
 import InputDate from "@/components/InputDate/InputDate";
+import LoadingState from "@/components/State/LoadingState";
+import EmptyState from "@/components/State/EmptyState";
 import { useTmasImpl } from "./useTmasImpl";
 
 export default function TMAS() {
@@ -143,8 +145,11 @@ export default function TMAS() {
             )}
 
             {isLoading ? (
-              <div className="flex justify-center items-center p-8">
-                <div className="text-gray-60">Loading TMAS data...</div>
+              <div className="m-6">
+                <LoadingState
+                  title="Loading TMAS data"
+                  description="Preparing the latest water level readings for your filters."
+                />
               </div>
             ) : tmas.length > 0 ? (
               <div className="border-t">
@@ -175,17 +180,11 @@ export default function TMAS() {
                 />
               </div>
             ) : (
-              <div className="m-8 text-center">
-                <div className="text-gray-80 font-medium mb-2">
-                  No Data Found
-                </div>
-                <div className="text-gray-60 text-sm">
-                  No TMAS data available for the selected filters.
-                </div>
-                <div className="text-gray-50 text-xs mt-2">
-                  Try adjusting your date selection or filters to find available
-                  data.
-                </div>
+              <div className="m-6">
+                <EmptyState
+                  title="No TMAS data found"
+                  description="No water-level records match your current date and filter selection."
+                />
               </div>
             )}
           </div>

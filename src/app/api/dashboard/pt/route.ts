@@ -1,24 +1,18 @@
-// app/api/dashboard/pt/route.ts
-import prisma from "@/utils/db";
 import { NextResponse } from "next/server";
+import { fetchFromSupabaseRest, makeError } from "@/app/api/_lib";
 
-export const GET = async () => {
+export const runtime = "nodejs";
+
+export async function GET() {
   try {
-    const data = await prisma.pT.findMany({
-      include: {
-        kebuns: true,
-        alatAWS: true,
-        alatAWL: true,
-        dashboards: true,
-      },
-    }); // Fetch all PT data with related info
+    const data = await fetchFromSupabaseRest<
+      Array<{ id: string; name: string }>
+    >("PT?select=id,name&order=name.asc");
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: data || [] });
   } catch (error) {
-    console.error("Error fetching PT data:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
+    return makeError(
+      `Failed to fetch PT data: ${error instanceof Error ? error.message : "Unknown error"}`,
     );
   }
-};
+}

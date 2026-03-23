@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { apiFetch } from "@/lib/api";
 
 interface DashboardFilters {
   pt?: string;
@@ -26,12 +27,7 @@ export const getDashboard = async (filters?: DashboardFilters) => {
     const queryString = searchParams.toString();
     const url = `/api/dashboard${queryString ? `?${queryString}` : ""}`;
 
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error("Failed to fetch data");
-    }
-    const result = await res.json();
-    return result;
+    return await apiFetch(url);
   } catch (err) {
     console.log(err);
     return { data: [] }; // Return empty data on error
@@ -54,12 +50,7 @@ export const getAWSDashboard = async (
 
 export const getPt = async () => {
   try {
-    const res = await fetch("/api/dashboard/pt");
-    if (!res.ok) {
-      throw new Error("Failed to fetch data");
-    }
-    const result = await res.json();
-    return result;
+    return await apiFetch("/api/dashboard/pt");
   } catch (err) {
     console.log(err);
     return { data: [] }; // Return empty data on error
@@ -74,12 +65,7 @@ export const getKebun = async (pt?: string) => {
         ? `/api/dashboard/kebun?pt=${encodeURIComponent(pt)}`
         : "/api/dashboard/kebun";
 
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error("Failed to fetch data");
-    }
-    const result = await res.json();
-    return result;
+    return await apiFetch(url);
   } catch (err) {
     console.log(err);
     return { data: [] }; // Return empty data on error

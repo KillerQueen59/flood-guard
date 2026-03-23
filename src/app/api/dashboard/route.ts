@@ -1,62 +1,113 @@
-// app/api/dashboard/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getDashboardData,
-  updateDashboardAggregations,
-} from "@/utils/dashboardAggregation";
+  fetchFromSupabaseRest,
+  loadLookupMaps,
+  makeError,
+  normalizeStatus,
+  toDashboardStatus,
+} from "@/app/api/_lib";
 
-export const GET = async (request: NextRequest) => {
+export const runtime = "nodejs";
+
+type DeviceType = "AWL" | "AWS";
+
+type DashboardSummary = {
+  kebunId: string;
+  kebunName: string;
+  ptName: string;
+  deviceType: DeviceType;
+  active: number;
+  idle: number;
+  alert: number;
+  rusak: number;
+};
+
+const addStatus = (entry: DashboardSummary, rawStatus: string) => {
+  const status = toDashboardStatus(rawStatus);
+  entry[status] += 1;
+};
+
+export async function GET(request: NextRequest) {
   try {
-    // Extract query parameters
-    const { searchParams } = new URL(request.url);
-    const pt = searchParams.get("pt");
-    const kebun = searchParams.get("kebun");
-    const deviceType = searchParams.get("deviceType");
+    const pt = request.nextUrl.searchParams.get("pt")?.trim();
+    const kebun = request.nextUrl.searchParams.get("kebun")?.trim();
+    const deviceTypeParam =
+      request.nextUrl.searchParams.get("deviceType")?.trim().toUpperCase() ||
+      "";
 
-    // Create filters object
-    const filters = {
-      ...(pt && pt !== "" && { pt }),
-      ...(kebun && kebun !== "" && { kebun }),
-      ...(deviceType && deviceType !== "" && { deviceType }),
+    const deviceType =
+      deviceTypeParam === "AWL" || deviceTypeParam === "AWS"
+        ? (deviceTypeParam as DeviceType)
+        : null;
+
+    const [lookups, awsRows, awlRows] = await Promise.all([
+      loadLookupMaps(),
+      fetchFromSupabaseRest<
+        Array<{ status: string; kebunId: string; ptId: string }>
+      >("AlatAWS?select=status,kebunId,ptId"),
+      fetchFromSupabaseRest<
+        Array<{ status: string; kebunId: string; ptId: string }>
+      >("AlatAWL?select=status,kebunId,ptId"),
+    ]);
+
+    const summaries = new Map<string, DashboardSummary>();
+
+    const upsert = (
+      source: DeviceType,
+      row: { status: string; kebunId: string; ptId: string },
+    ) => {
+      const kebunRow = lookups.kebunById[row.kebunId];
+      const ptRow =
+        (kebunRow && lookups.ptById[kebunRow.ptId]) || lookups.ptById[row.ptId];
+
+      const kebunName = kebunRow?.name || "";
+      const ptName = ptRow?.name || "";
+
+      if (pt && ptName !== pt) return;
+      if (kebun && kebunName !== kebun) return;
+
+      const key = `${source}:${row.kebunId}`;
+      if (!summaries.has(key)) {
+        summaries.set(key, {
+          kebunId: row.kebunId,
+          kebunName,
+          ptName,
+          deviceType: source,
+          active: 0,
+          idle: 0,
+          alert: 0,
+          rusak: 0,
+        });
+      }
+
+      const entry = summaries.get(key);
+      if (!entry) return;
+      addStatus(entry, normalizeStatus(row.status));
     };
 
-    console.log("Dashboard API filters:", filters); // Debug log
+    if (!deviceType || deviceType === "AWS") {
+      (awsRows || []).forEach((row) => upsert("AWS", row));
+    }
 
-    // Pass filters to your data fetching function
-    const data = await getDashboardData(filters);
+    if (!deviceType || deviceType === "AWL") {
+      (awlRows || []).forEach((row) => upsert("AWL", row));
+    }
 
-    console.log("Dashboard API data length:", data.length); // Debug log
+    const data = Array.from(summaries.values()).map((item) => ({
+      kebun: item.kebunName,
+      kebunName: item.kebunName,
+      ptName: item.ptName,
+      deviceType: item.deviceType,
+      active: item.active,
+      idle: item.idle,
+      alert: item.alert,
+      rusak: item.rusak,
+    }));
 
     return NextResponse.json({ data });
   } catch (error) {
-    console.error("Error fetching dashboard data:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
+    return makeError(
+      error instanceof Error ? error.message : "Failed to fetch dashboard data",
     );
   }
-};
-
-export const POST = async () => {
-  try {
-    // Trigger dashboard aggregation recalculation
-    const success = await updateDashboardAggregations();
-
-    if (success) {
-      return NextResponse.json({
-        message: "Dashboard aggregations updated successfully",
-      });
-    } else {
-      return NextResponse.json(
-        { error: "Failed to update dashboard aggregations" },
-        { status: 500 }
-      );
-    }
-  } catch (error) {
-    console.error("Error updating dashboard aggregations:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-};
+}

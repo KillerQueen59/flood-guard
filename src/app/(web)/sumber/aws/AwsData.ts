@@ -1,11 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { apiFetch } from "@/lib/api";
+
 export const getPt = async () => {
   try {
-    const res = await fetch("/api/dashboard/pt");
-    if (!res.ok) {
-      throw new Error("Failed to fetch data");
-    }
-    const result = await res.json();
-    return result;
+    return await apiFetch("/api/dashboard/pt");
   } catch (err) {
     console.log(err);
   }
@@ -13,12 +11,7 @@ export const getPt = async () => {
 
 export const getKebun = async () => {
   try {
-    const res = await fetch("/api/dashboard/kebun");
-    if (!res.ok) {
-      throw new Error("Failed to fetch data");
-    }
-    const result = await res.json();
-    return result;
+    return await apiFetch("/api/dashboard/kebun");
   } catch (err) {
     console.log(err);
   }
@@ -26,12 +19,7 @@ export const getKebun = async () => {
 
 export const getDevice = async () => {
   try {
-    const res = await fetch("/api/dashboard/device");
-    if (!res.ok) {
-      throw new Error("Failed to fetch data");
-    }
-    const result = await res.json();
-    return result;
+    return await apiFetch("/api/dashboard/device");
   } catch (err) {
     console.log(err);
   }
@@ -49,11 +37,7 @@ export const getAWS = async (filters?: { pt?: string; status?: string }) => {
       params.toString() ? "?" + params.toString() : ""
     }`;
 
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error("Failed to fetch data");
-    }
-    const result = await res.json();
+    const result = await apiFetch(url);
 
     // Filter to only show AWS devices
     if (result?.data) {

@@ -1,80 +1,76 @@
-// app/api/dashboard/device/route.ts
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  fetchFromSupabaseRest,
+  loadLookupMaps,
+  makeError,
+  withDeviceRelations,
+  normalizeStatus,
+} from "@/app/api/_lib";
 
-const prisma = new PrismaClient();
+export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Fetch AWS devices
-    const awsDevices = await prisma.alatAWS.findMany({
-      include: {
-        kebun: {
-          include: {
-            pt: true,
-          },
-        },
-      },
-    });
+    const pt = request.nextUrl.searchParams.get("pt")?.trim();
+    const kebun = request.nextUrl.searchParams.get("kebun")?.trim();
+    const status = request.nextUrl.searchParams.get("status")?.trim();
+    const region = request.nextUrl.searchParams.get("region")?.trim();
 
-    // Fetch AWL devices
-    const awlDevices = await prisma.alatAWL.findMany({
-      include: {
-        kebun: {
-          include: {
-            pt: true,
-          },
-        },
-      },
-    });
+    const [lookups, awsRows, awlRows] = await Promise.all([
+      loadLookupMaps(),
+      fetchFromSupabaseRest<
+        Array<{
+          id: string;
+          name: string;
+          detailName: string;
+          startDate: string;
+          battery: number;
+          signal: number;
+          sensor: number;
+          status: string;
+          ptId: string;
+          kebunId: string;
+        }>
+      >(
+        "AlatAWS?select=id,name,detailName,startDate,battery,signal,sensor,status,ptId,kebunId",
+      ),
+      fetchFromSupabaseRest<
+        Array<{
+          id: string;
+          name: string;
+          detailName: string;
+          startDate: string;
+          battery: number;
+          signal: number;
+          data: number;
+          status: string;
+          note: string;
+          ptId: string;
+          kebunId: string;
+        }>
+      >(
+        "AlatAWL?select=id,name,detailName,startDate,battery,signal,data,status,note,ptId,kebunId",
+      ),
+    ]);
 
-    // Combine and format devices
-    const allDevices = [
-      ...awsDevices.map((device) => ({
-        id: device.id,
-        name: device.name,
-        detailName: device.detailName,
-        type: "AWS",
-        status: device.status,
-        battery: device.battery,
-        signal: device.signal,
-        kebunId: device.kebunId,
-        kebunName: device.kebun.name,
-        sensor: device.sensor,
-        ptId: device.ptId,
-        ptName: device.kebun.pt.name,
-      })),
-      ...awlDevices.map((device) => ({
-        id: device.id,
-        name: device.name,
-        detailName: device.detailName,
-        type: "AWL",
-        status: device.status,
-        battery: device.battery,
-        signal: device.signal,
-        kebunId: device.kebunId,
-        kebunName: device.kebun.name,
-        ptId: device.ptId,
-        ptName: device.kebun.pt.name,
-      })),
-    ];
+    const awsWithRelations = withDeviceRelations(awsRows || [], lookups, "AWS");
+    const awlWithRelations = withDeviceRelations(awlRows || [], lookups, "AWL");
 
-    return NextResponse.json({
-      success: true,
-      data: allDevices,
-      message: `Found ${allDevices.length} devices`,
-    });
+    const rows = [...awsWithRelations, ...awlWithRelations]
+      .filter((item) => (pt ? item.ptName === pt : true))
+      .filter((item) => (kebun ? item.kebunName === kebun : true))
+      .filter((item) =>
+        status
+          ? normalizeStatus(item.status) === normalizeStatus(status)
+          : true,
+      )
+      .filter((item) => (region ? item.ptName === region : true))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    return NextResponse.json({ data: rows });
   } catch (error) {
-    console.error("Error fetching device data:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch device data",
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
+    return makeError(
+      error instanceof Error ? error.message : "Failed to fetch device data",
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

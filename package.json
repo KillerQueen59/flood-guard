@@ -7,7 +7,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "psql \"$DATABASE_URL\" -f restore_public.sql"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.6.0",
@@ -16,7 +16,6 @@
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^3.10.0",
-    "@prisma/client": "^6.1.0",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.58.0",
     "@tanstack/react-table": "^8.20.5",
@@ -38,7 +37,6 @@
     "leaflet": "^1.9.4",
     "next": "^15.2.4",
     "pdf-lib": "^1.17.1",
-    "prisma": "^6.1.0",
     "react": "^19.1.0",
     "react-chartjs-2": "^5.2.0",
     "react-datepicker": "^7.5.0",
@@ -50,6 +48,7 @@
     "recoil": "^0.7.7",
     "recoil-nexus": "^0.5.1",
     "shpjs": "^6.1.0",
+    "swr": "^2.4.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.5",
     "yup": "^1.4.0"

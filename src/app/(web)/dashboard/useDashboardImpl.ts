@@ -1,12 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { convertToLabelValue } from "@/shared/helper";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  getAWLDashboard,
-  getAWSDashboard,
-  getKebun,
-  getPt,
-} from "./DashboardData";
+import { useMemo, useState } from "react";
+import { buildApiUrl, useApiSWR } from "@/hooks/useApiSWR";
 
 interface Options {
   label: string;
@@ -18,159 +13,74 @@ interface Options {
 export const useDashboardImpl = () => {
   const [pt, setPt] = useState("");
   const [kebun, setKebun] = useState("");
-  const [pts, setPts] = useState<Options[]>([]);
-  const [kebuns, setKebuns] = useState<Options[]>([]);
-  const [awlDashboards, setAwlDashboards] = useState([]);
-  const [awsDashboards, setAwsDashboards] = useState([]);
-
   const [showModal, setShowModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const getPTData = useCallback(() => {
-    setIsLoading(true);
-    getPt()
-      .then((res) => {
-        if (res?.data) {
-          const _pts = res.data
-            .map((item: any) => ({
-              label: item.name,
-              value: item.name,
-            }))
-            .filter((item: any) => item.value !== "");
+  const ptPath = "/api/dashboard/pt";
+  const kebunPath = buildApiUrl("/api/dashboard/kebun", {
+    pt: pt || undefined,
+  });
+  const awlPath = buildApiUrl("/api/dashboard", {
+    pt: pt || undefined,
+    kebun: kebun || undefined,
+    deviceType: "AWL",
+  });
+  const awsPath = buildApiUrl("/api/dashboard", {
+    pt: pt || undefined,
+    kebun: kebun || undefined,
+    deviceType: "AWS",
+  });
 
-          setPts([
-            {
-              label: "All",
-              value: "",
-            },
-            ..._pts,
-          ]);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching PT data:", error);
-        setPts([{ label: "All", value: "" }]);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
+  const { data: ptResponse, isLoading: isPtLoading } = useApiSWR<{
+    data: any[];
+  }>(ptPath);
+  const { data: kebunResponse, isLoading: isKebunLoading } = useApiSWR<{
+    data: any[];
+  }>(kebunPath);
+  const { data: awlResponse, isLoading: isAwlLoading } = useApiSWR<{
+    data: any[];
+  }>(awlPath);
+  const { data: awsResponse, isLoading: isAwsLoading } = useApiSWR<{
+    data: any[];
+  }>(awsPath);
 
-  const getKebunData = useCallback((selectedPt?: string) => {
-    setIsLoading(true);
-    getKebun(selectedPt)
-      .then((res) => {
-        if (res?.data) {
-          const _kebun = res.data
-            .map((item: any) => ({
-              label: item.name,
-              value: item.name,
-            }))
-            .filter((item: any) => item.value !== "");
-          setKebuns([
-            {
-              label: "All",
-              value: "",
-            },
-            ..._kebun,
-          ]);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching Kebun data:", error);
-        setKebuns([{ label: "All", value: "" }]);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
+  const pts = useMemo(() => {
+    const data = ptResponse?.data || [];
+    const options = data.map((item: any) => ({
+      label: item.name,
+      value: item.name,
+    }));
 
-  const getDashboardData = useCallback(() => {
-    setIsLoading(true);
-    const filters = {
-      pt: pt || undefined,
-      kebun: kebun || undefined,
-    };
+    return [{ label: "All", value: "" }, ...options];
+  }, [ptResponse]);
 
-    console.log("Fetching dashboard with filters:", filters);
+  const kebuns = useMemo(() => {
+    const data = kebunResponse?.data || [];
+    const options = data.map((item: any) => ({
+      label: item.name,
+      value: item.name,
+    }));
 
-    // Fetch both AWL and AWS data simultaneously
-    Promise.all([getAWLDashboard(filters), getAWSDashboard(filters)])
-      .then(([awlRes, awsRes]) => {
-        console.log("AWL Response:", awlRes);
-        console.log("AWS Response:", awsRes);
-
-        if (awlRes?.data) {
-          setAwlDashboards(awlRes.data);
-        } else {
-          setAwlDashboards([]);
-        }
-        if (awsRes?.data) {
-          setAwsDashboards(awsRes.data);
-        } else {
-          setAwsDashboards([]);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching dashboard data:", error);
-        setAwlDashboards([]);
-        setAwsDashboards([]);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [pt, kebun]);
+    return [{ label: "All", value: "" }, ...options];
+  }, [kebunResponse]);
 
   // Separate dashboard data for AWL and AWS
   const awlDashboard = useMemo(() => {
-    console.log("Converting AWL dashboards:", awlDashboards);
+    const awlDashboards = awlResponse?.data || [];
     if (awlDashboards.length > 0) {
       return convertToLabelValue(awlDashboards, kebun);
     }
     return [];
-  }, [awlDashboards, kebun]);
+  }, [awlResponse, kebun]);
 
   const awsDashboard = useMemo(() => {
-    console.log("Converting AWS dashboards:", awsDashboards);
+    const awsDashboards = awsResponse?.data || [];
     if (awsDashboards.length > 0) {
       return convertToLabelValue(awsDashboards, kebun);
     }
     return [];
-  }, [awsDashboards, kebun]);
+  }, [awsResponse, kebun]);
 
-  // Handle PT change
-  const handlePtChange = useCallback(
-    (newPt: string) => {
-      console.log("PT changed to:", newPt);
-      setPt(newPt);
-      // Reset kebun when PT changes and reload kebun options
-      setKebun("");
-      getKebunData(newPt === "" ? undefined : newPt);
-    },
-    [getKebunData]
-  );
-
-  // Handle Kebun change
-  const handleKebunChange = useCallback((newKebun: string) => {
-    console.log("Kebun changed to:", newKebun);
-    setKebun(newKebun);
-  }, []);
-
-  // Initial data load
-  useEffect(() => {
-    console.log("Initial data load");
-    getPTData();
-    getKebunData();
-  }, [getPTData, getKebunData]);
-
-  // Reload dashboard when filters change
-  useEffect(() => {
-    // Only fetch dashboard data after initial PT data is loaded
-    if (pts.length > 0) {
-      console.log("Reloading dashboard data due to filter change");
-      getDashboardData();
-    }
-  }, [pt, kebun, pts.length, getDashboardData]);
+  const loading = isPtLoading || isKebunLoading || isAwlLoading || isAwsLoading;
 
   return {
     pt,
@@ -180,9 +90,12 @@ export const useDashboardImpl = () => {
     awlDashboard,
     awsDashboard,
     showModal,
-    loading: isLoading,
+    loading,
     setShowModal,
-    setPt: handlePtChange,
-    setKebun: handleKebunChange,
+    setPt: (nextPt: string) => {
+      setPt(nextPt);
+      setKebun("");
+    },
+    setKebun,
   };
 };
